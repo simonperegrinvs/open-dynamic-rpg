@@ -2,6 +2,12 @@
 
 Research and working engine decision recorded: 2026-09-13.
 
+Gameplay alignment updated: 2026-09-14. Current requirements below follow the
+city-screen, adventure-map, connected-dungeon and turn-based battle direction in
+[the game concept](GAME_CONCEPT.md#gameplay-reference-mix). Source inspections,
+dependency findings and their dates remain historical research evidence;
+this alignment is not a new integration test or dependency selection.
+
 This review supports the [game concept](GAME_CONCEPT.md). The project intends
 new tools to be reusable open-source projects. The requirement that production
 tools be usable for free remains in force. Unreal Engine 5.8 is the agreed
@@ -31,8 +37,10 @@ those systems would divert substantial effort from our adventure tools.
 
 This is the working engine decision, with practical validation still required.
 Before large-scale production, check an original creature and a generated
-dungeon on the intended Mac, including animation quality, four-character
-navigation, saving and performance. Keep the established biped/nonhumanoid
+dungeon on the intended Mac, including animation quality, exploration movement,
+tactical deployment and battle readability at recorded candidate party sizes,
+mid-battle saving and performance. Include a larger-than-four party trial;
+the final active limit is open. Keep the established biped/nonhumanoid
 coverage checks as the creature workflow develops.
 
 Unreal is free upfront for game development, with the standard 5% royalty on
@@ -48,11 +56,23 @@ ready-made visual editor, expressive prerequisites and live inspection would
 justify a larger dependency with a changing API. These are alternatives, not
 two systems proposed for simultaneous use.
 
+For the revised game, their value is stateful objectives, concise contextual
+choices and consequences shared across city services, map travel and dungeons.
+A dialogue editor's breadth alone is not evidence of fit. Neither quest runtime
+supplies the tactical combat rules or the adventure-map experience.
+
 For dungeons, **BenPyton/ProceduralDungeon** is a credible open-source candidate
 for the narrower task of assembling authored 3D rooms. It is substantially more
 than a random-room demonstration, but does not establish equivalence with
 Dungeon Architect's full toolset. Its experimental saving, quest constraints
 and licensing need explicit evaluation.
+
+Room assembly must now be assessed against exploration passages, a main battle
+space per floor, optional secret encounter/reward spaces, and an optional
+lowest-floor boss occupying the main encounter role. The inspected provider
+does not establish legal tactical deployment, turn-based movement, encounter
+roles or larger-party capacity for our game. Treat these as requirements to
+validate or implement after the rules are defined.
 
 Retain Godot as a reference alternative. QuestSystem 2 offers a small foundation;
 Nexus Quest Weaver supplies more authoring features but needs changes to runtime
@@ -138,6 +158,8 @@ The following packaging is proposed, not implemented:
    supported actions, prerequisites, outcomes, rewards and physical requirements.
    Assemble designed story patterns into concrete adventures. The game supplies
    its factions, characters, equipment rules and canon through data and adapters.
+   Express city-service opportunities, map destinations, dungeon discoveries and
+   main/secret/boss encounter roles through the same state and stable references.
 2. **Quest runtime and authoring adapter.** Translate the shared adventure into
    the selected engine's quest runtime and expose its state. Extend an existing
    foundation where practical, keeping upstream fixes distinct from new features.
@@ -145,10 +167,15 @@ The following packaging is proposed, not implemented:
    interaction placements and route constraints to a provider; receive a compact
    resolved layout with stable identifiers. Begin with one provider. A later
    paid-provider adapter should not become mandatory for the public toolkit.
+   Validate battle-space capacity and movement geometry for the tested party
+   sizes, plus optional secret access and normal progress without secret rewards.
 4. **Validation and persistence.** Check physical and logical reachability,
    supported alternative solutions and world consistency. Persist each adventure
    and its consequences; prevent duplicated rewards and accidental rerolls.
    Version templates, instances, layouts and save migrations explicitly.
+   Include map discovery/travel state and tactical turn state. Current actor,
+   order, spent actions, positions, effects, objectives and random state must
+   survive independently of animation or whether a room is currently rendered.
 5. **Authoring and automation.** Provide documented operations for editors,
    command-line use and MCP: inspect a definition, generate a candidate, explain
    a failed constraint, preview changes, run a validation batch and save accepted
@@ -345,18 +372,36 @@ joint quest/location constraints and complete expedition-save requirements.
 
 Use the previously proposed blacksmith/mine adventure as a bounded comparison:
 
+- Follow one complete loop: access the blacksmith directly through the city
+  screen, prepare, select the mine on the adventure map, explore connected
+  spaces, resolve its main encounter and return for a persistent equipment
+  upgrade. Use concise choices and discoveries without town dialogue rounds.
+- Begin with an authored case if useful, then generated variants using the same
+  validated data and runtime. Record the actual party size for every trial and
+  compare larger-than-four candidates before selecting a cap.
+- Check one main battle per floor as the default, hidden loot without combat,
+  and an optional secret battle with a special reward. Demonstrate that normal
+  progression does not depend on that secret. A separate lowest-floor variant
+  can test a boss occupying the main encounter slot; secret encounters are not
+  bosses, and neither secret encounters nor a boss are mandatory in every dungeon.
 - Two simultaneous instances of one template with different participants,
   locations and rewards; no cross-instance progress or event leakage.
 - Real negotiation, infiltration and combat routes in the generated location;
   explain and reject an impossible candidate with a bounded fallback.
 - Stable layout, loot, doors, participants and quest progress across town trips,
-  saves and reloads, including the agreed paused-combat state.
-- Four-character navigation through room connections and a battle at a section
-  boundary; no loss of active actors when presentation unloads.
+  map re-entry, saves and reloads, including discoveries and in-progress tactical
+  battle state; no rerolled rewards or restarted encounters.
+- Exploration movement through room connections, legal tactical deployment,
+  reachable objectives and useful participation at candidate party sizes.
+  Test a battle near a section boundary; no loss of authoritative actors, turns,
+  effects or objectives when presentation unloads.
 - Preservation or explicit migration of an active expedition after a content
   or provider update; reward delivery remains exactly once.
 - A measured generation budget and separate measurements for description size,
   complete save size, loading, memory and frame performance.
+- Separate pacing observations: exploration and battle duration, idle or blocked
+  character turns, backtracking, discovery usefulness and equipment-management
+  effort. One main battle per floor is a design choice, not a measured optimum.
 - An AI-assisted edit that can be inspected, validated, opened in the engine and
   tested through the same public operations available to a human tool user.
 

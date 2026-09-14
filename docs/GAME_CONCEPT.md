@@ -1,6 +1,6 @@
 # Open Dynamic RPG: concept and design considerations
 
-Updated: 2026-09-13.
+Updated: 2026-09-14.
 
 Status: concept and gameplay-system definition. Agreed gameplay choices are
 recorded below, and the eight pillars remain accepted design considerations.
@@ -10,12 +10,26 @@ Detailed gameplay rules, technical architecture and prototype scope remain
 to be settled. Compact dynamic dungeons and composable environment assets are
 required; specific quest and dungeon dependencies remain under evaluation.
 
+The current direction combines Heroes-inspired city screens and an adventure
+map with curiosity-driven dungeon exploration and
+Shining Force II-inspired tactical battles. See
+[Gameplay reference mix](#gameplay-reference-mix) and
+[Dungeon exploration and battle pacing](#dungeon-exploration-and-battle-pacing).
+The former real-time-with-pause approach and fixed four-character party have
+been superseded. The active party limit, total recruitable roster and detailed
+turn rules remain open. This document integrates the revised direction; earlier
+compatible choices remain the full-game baseline, not a requirement to implement
+every system in the first playable slice.
+
 ## Working concept
 
 A single-player fantasy RPG about an independent adventurer building a career
 from a familiar trading town while uncovering why ancient routes between
 forgotten places are reopening. Local commissions, recovered equipment,
 relationships and discoveries lead gradually into otherworldly expeditions.
+Prepare through direct city services, choose destinations on an adventure map,
+explore connected dungeon spaces for mystery and loot, and command the party in
+selected turn-based tactical battles.
 
 The world combines wonder with real danger: welcoming places and memorable
 friendships coexist with dangerous ruins, disturbing discoveries and difficult
@@ -27,6 +41,78 @@ with practical development costs and a possible future public release in mind.
 
 The existing graphics experiments can inform character and equipment production.
 This is an original game concept with its own rules and content.
+
+## Gameplay reference mix
+
+Working direction, 2026-09-14. Each reference informs a particular part of the
+experience; exact controls, rules and scope remain open.
+
+| Part of the game | Reference | Intended experience |
+|---|---|---|
+| City visits | Heroes of Might and Magic | An atmospheric city screen with direct access to services, party preparation and opportunities. |
+| Regional travel | Heroes of Might and Magic | An adventure map for discovering destinations and choosing routes, risks and opportunities. |
+| Dungeon exploration | Neverwinter Nights, Diablo I and Skyrim | Physically explore connected spaces, uncover mysteries, discover hidden loot and learn about the place through its environment. These are references for exploration and atmosphere. |
+| Battles | Shining Force II | Control individual party members in readable, turn-based tactical encounters, with movement, positioning and complementary roles. |
+
+### City services and the adventure map
+
+City visits should be quick and purposeful. Present the forge, market, recovery,
+recruitment and adventure opportunities through directly accessible services.
+Recurring characters can express personality and offer short consequential
+choices within those interactions. Progress should not depend on walking around
+town or repeatedly checking multiple NPCs for new dialogue.
+
+Use the regional map to choose and discover places worth exploring. Entering a
+dungeon changes from regional travel to exploration of its actual rooms and
+passages. City construction, territorial control, map time and movement budgets
+remain undecided; the reference does not settle those systems.
+
+### Mystery, discovery and tactical encounters
+
+Dungeon exploration should reward curiosity, observation and the team's
+capabilities. Hidden loot, secret areas and optional encounters make searching
+worthwhile. Environmental clues can give a location a history and suggest what
+lies deeper. Possible discoveries to evaluate include shortcuts, unusual
+mechanisms, evidence of an inhabitant and alternate approaches to a battle.
+
+The chosen rhythm is one main battle per floor, optional secret bonus battles
+with special rewards, and a possible lowest-floor boss as that floor's main
+battle. See the pacing section for the full decision. Combat occupies selected
+major rooms within the connected dungeon. Discovery and atmosphere must carry
+the intervals between battles; copying these references' encounter frequency
+is not part of the decision.
+
+The loop is: prepare in the city, choose a destination on the adventure map,
+explore its dungeon, resolve selected tactical encounters, then return with
+discoveries and rewards that develop the party and unlock further opportunities.
+The simultaneous party limit, exploration controls, deployment transitions and
+precise combat rules remain open. Plan for evaluating parties larger than four;
+eight and twelve are comparison candidates, not selected limits.
+
+The separation of town, adventure-map and combat views can be studied in the
+[Heroes III manual](https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/297000/manuals/BONUS_Heroes_of_Might_and_Magic_III_HDEdition_OldManual1999_EN.pdf).
+Individual tactical movement and actions can be studied in the
+[Shining Force II manual](https://www.sega.jp/genesismini2/assets/manual/pdf/US_Shining-Force-II.pdf).
+The proposed combination is our design interpretation, not a locally tested
+result or a dependency selection.
+
+### Research evidence and its limits
+
+The comparison researched on 2026-09-14 supports the ingredients, not a proven
+formula for their combination. The
+[Solasta review](https://www.pcgamer.com/solasta-crown-of-the-magister-review/)
+describes connected dungeon exploration, alternative approaches and tactical
+use of the environment. The
+[Battle Chasers publisher description](https://www.thqnordicmobile.com/en/games/battle-chasers-nightwar-mobile/)
+describes secrets, puzzles and character-specific dungeon abilities, but its
+battles use a separate JRPG format. Its
+[PC Gamer review](https://www.pcgamer.com/battle-chasers-nightwar-review/)
+also reports difficulty spikes and drawn-out fights: interesting combat alone
+does not establish good expedition pacing.
+
+One main battle per floor is our chosen starting pattern. Floor size, useful
+exploration time, battle length, party size and equipment-management effort
+must be assessed together. No playtest of this combination has been performed.
 
 ## Agreed direction
 
@@ -64,16 +150,18 @@ This is an original game concept with its own rules and content.
 - **Ancestry and background.** Choose Human, Elf, Dwarf or Orc and a grounded
   background that influences early contacts and dialogue while leaving future
   ambitions open.
-- **Four recruitable companions.** Choose up to three active companions, for a
-  party of four including the hero. Each has a personal story and relationships.
+- **An individual-character party and recruitable roster.** Develop the hero
+  and companions as tactical partners with personal stories and relationships.
+  Evaluate more than four simultaneously active characters; the active limit
+  and total recruitable roster remain open.
   Recruited reserves share party advancement; equipment investment and shared
   experiences remain individual.
-- **Direct control with autonomy.** Companions act sensibly on their own, while
-  the player can pause and directly order any party member's movement, targets
-  and abilities.
-- **Measured, readable combat.** Real-time exchanges with pause make attacks,
-  spell preparations and reactions understandable. Outcomes depend on character
-  abilities, equipment, tactics and understandable probabilities.
+- **Direct tactical control.** The player commands each active character's
+  movement, targets and abilities during turn-based battles. Exploration group
+  controls and any optional combat automation remain to be designed.
+- **Measured, readable combat.** Shining Force II-inspired tactical encounters
+  make movement, actions and outcomes understandable. Outcomes depend on
+  character abilities, equipment, tactics and understandable probabilities.
   Armor reduces the harm of successful hits, with avoidance handled separately.
 - **D&D-inspired custom rules.** Capture the value of builds, preparation and
   equipment while designing for this game's continuing progression.
@@ -91,13 +179,16 @@ This is an original game concept with its own rules and content.
   combat requires a limited ability or item.
 - **Reload after party defeat.** When the whole party loses, resume from a
   previous save. The failed attempt leaves no lasting changes beyond that save.
-- **Save anywhere.** Save during exploration or while combat is paused, allowing
-  convenient stopping points and tactical retries.
+- **Save anywhere, including battles.** Preserve city and map progress,
+  dungeon exploration and an in-progress tactical battle for convenient stopping
+  points and retries. Handling a save during action playback remains to be defined.
 - **Fixed world danger.** Locations, depths and world events determine threats
   independently of the hero's level. Earlier threats remain easier as the party
   improves. This is our design rule, not a claim about every encounter in NWN.
-- **A familiar hub and varied expeditions.** Adventures can expand into ruins,
-  wilderness and fortresses, growing from local problems into other realms.
+- **Direct city services and adventure-map travel.** Use a Heroes-inspired city
+  screen for preparation and concise interactions, and an adventure map to
+  discover and reach destinations. Adventures can expand into ruins, wilderness
+  and fortresses, growing from local problems into other realms.
 - **Persistent places with temporary expeditions.** Ordinary locations usually
   retain their geography and history. Portals and similar means can provide
   generated expeditions. An unfinished expedition remains available across
@@ -106,6 +197,11 @@ This is an original game concept with its own rules and content.
   description that expands into a playable place using shared, reusable and
   composable environment assets. New expedition locations can be generated
   during play; returning to an existing one preserves its layout and progress.
+- **Exploration punctuated by major battles.** Connected dungeon spaces reward
+  curiosity with mysteries, hidden loot and discoveries. Usually one main battle
+  occupies a major room per floor. Extra battles are optional secret content
+  with special rewards, not bosses. A dungeon may have a lowest-floor boss as
+  that floor's main battle.
 - **An evolving mystery.** Reopening ancient routes connect the main story,
   factions, companions and equipment lore. Chapters have real endings while
   discoveries reveal who sealed the routes and why.
@@ -114,9 +210,11 @@ This is an original game concept with its own rules and content.
   reliable; optional risky attempts offer visible odds and clear stakes.
   Noncombat skills have separate advancement choices. A present, willing party
   member can provide the required expertise or speak on the party's behalf.
-- **Written dialogue choices.** Conversations offer responses shaped by
-  discoveries, skills and relationships, unlocking side quests and main-story
-  information. Generated adventures supply contextual dialogue.
+- **Concise written choices and discovery-led storytelling.** City-service
+  interactions and relevant expedition events offer responses shaped by skills,
+  discoveries and relationships. Environmental evidence carries much of the
+  mystery. Generated adventures supply contextual choices without requiring
+  repeated town exploration or rounds of NPC conversations.
 - **Companions warn, then act.** They communicate disagreements and limits before
   refusing significant actions or eventually leaving after consequential conflicts.
   Reconciliation remains possible through meaningful actions or a personal quest.
@@ -146,8 +244,10 @@ This is an original game concept with its own rules and content.
 - **Quests assembled from designed rules and story patterns.** This is the
   selected generation approach. Its flexibility comes from supported situations,
   actors, objectives, solutions and consequences.
-- **An elevated 3D viewpoint.** A rotatable, zoomable camera supports exploration,
-  full-party tactics and visible equipment. Close inspection can show finer detail.
+- **An elevated 3D dungeon viewpoint.** A rotatable, zoomable camera supports
+  exploration, full-party tactics and visible equipment. Close inspection can
+  show finer detail. City screens and the adventure map use their own suitable
+  presentation; they do not require a walkable 3D town or continuous overworld.
 - **Detailed, stylized fantasy with realistic materials.** This is the selected
   visual target: expressive, readable shapes with convincing metal, leather,
   stone, skin and magical effects. Art quality must hold at the gameplay camera
@@ -196,6 +296,12 @@ These roles are agreed; individual abilities and their unlock levels remain
 to be designed. A character chooses one defining specialization in each class
 they develop, with that class's shared abilities and elective talents alongside it.
 
+Develop these roles for turn-based decisions: movement, protection, range,
+control, disruption and resource use. Exact action costs, reactions, initiative
+effects and terrain rules are still proposals to evaluate. A larger active
+party increases the number of decisions and loadouts; keep useful choices
+readable and test management effort before expanding ability lists.
+
 ### Dual-classing and long-term mastery
 
 The hero and companions can develop up to two classes. Each new level advances
@@ -206,6 +312,10 @@ specialization develop through investment in that particular class.
 Beginning a second class requires both suitable aptitude and training or a
 meaningful quest for an appropriate mentor. Exact prerequisites and unlock
 levels remain open.
+
+Access mentor services through the city interface when available. A training
+quest can lead to an expedition or discovery; routine training should not
+require searching town for a mentor or repeating dialogue to reach the service.
 
 With enough investment, both chosen classes can reach their advanced abilities.
 Staying single-class puts that investment into deeper mastery sooner. This
@@ -242,6 +352,12 @@ central mystery concerns their history, who sealed them and why they are opening
 again. The hero becomes involved through work, discoveries and relationships;
 their identity remains that of an independent adventurer.
 
+The town is represented by its city screen and recurring services. Surface
+consequential news and choices directly in those services. Dungeon evidence,
+discovered routes, recovered objects and brief expedition events advance the
+mystery alongside character interactions. A discovered destination can be worth
+exploring before a commission names it.
+
 Ordinary places should remain recognizable on return, with inhabitants and
 problems changing through events and the player's choices. Temporary portal
 expeditions provide additional variety while keeping long-term world persistence
@@ -249,24 +365,30 @@ manageable. Their rewards, discoveries and story consequences belong to the
 ongoing character history even when the expedition location is retired. The
 player can leave an unfinished expedition, resupply in town and return to the
 same location and progress. Saves preserve the unfinished expedition, including
-a paused battle. Completion or explicit abandonment ends the expedition's reuse;
-its location can retire after the party has left. Detailed storage and cleanup
-mechanics remain part of the future technical design.
+an in-progress tactical battle. Completion or explicit abandonment ends the
+expedition's reuse; its location can retire after the party has left. Detailed
+storage and cleanup mechanics remain part of the future technical design.
 
 Selected urgent quests can have deadlines or impending events that are clearly
 communicated to the player. Most quests allow other adventures to be pursued
 without time-based failure. Deadline triggers and the rules for advancing quest
 time still need design.
 
+Define regional travel time, exploration time, tactical turn time and recovery
+time together. Time spent thinking at a decision or reading a city screen must
+not silently consume an urgent quest's deadline. A daily movement budget or a
+Heroes-style calendar has not been selected.
+
 The proposed loop connects the agreed systems:
 
-1. Conversations, rumors and discoveries reveal an expedition, an equipment
-   goal, a companion concern or a lead in the main mystery.
+1. Directly accessible city opportunities, rumors, map exploration and dungeon
+   discoveries reveal an expedition, an equipment goal, a companion concern or
+   a lead in the main mystery. Repeated town dialogue rounds are not required.
 2. Prepare the party, equipment and supplies using knowledge of the destination
-   and its dangers.
-3. Explore, gather clues and choose supported approaches. Use skills,
-   relationships and measured combat to resolve obstacles, managing resources
-   between safe places.
+   and its dangers, then travel using the adventure map.
+3. Explore connected dungeon spaces, gather clues, discover hidden loot and
+   choose supported approaches. Use skills, relationships and selected tactical
+   battles to resolve obstacles, managing resources between safe places.
 4. Return with consequences that advance relationships, knowledge, equipment
    or the main story. Develop signature items through the recurring craftsmen
    and merchant.
@@ -304,6 +426,11 @@ reliable capability can offer additional opportunities, with visible odds and
 clear stakes. The exact skill list, thresholds and failure consequences remain
 to be designed.
 
+Keep negotiation and other social solutions focused on consequential decisions
+at a service or encounter. A floor's main encounter may support an alternative
+resolution where its adventure allows it; one planned battle per floor is a
+layout and pacing default, not a requirement to kill every main opponent.
+
 Use the separate noncombat advancement budget to make expertise worth developing
 across the party. A companion can supply the needed skill or lead a conversation
 when present and willing. The character contributing the expertise should be
@@ -328,6 +455,10 @@ of the original decision.
 The blacksmith, enchanter and store owner are central examples of these recurring
 characters. Their roles in equipment development are detailed below.
 
+Expose these consequences through changed service options, concise messages,
+map access and discoveries. Relationships can remain meaningful without
+requiring routine social visits to every character in town.
+
 **Design check:** completing an adventure changes something the player can later
 observe in a relationship, faction, service or place.
 
@@ -338,14 +469,25 @@ to help players understand dangers and prepare. Include secrets and distinctive
 locations that can be discovered independently of accepted quests. Sound,
 lighting and environmental details should make places worth exploring.
 
+On the regional map, discovery reveals destinations and routes. Inside a
+dungeon, curiosity can uncover loot, secret spaces and information about its
+inhabitants or history. Not every reward needs a battle. Optional secret battles
+offer special rewards and must remain unnecessary for ordinary progression.
+Prefer observable clues and useful discoveries to exhaustive container checking;
+exact detection and interaction rules still need design.
+
 **Design check:** information or a discovered route can change a sensible plan
 before the party gains another level or equipment upgrade.
 
 ### 5. Combat decisions and expedition resources
 
 Create tactical priorities through enemy roles, terrain, positioning and
-encounter objectives. Pause should give the player useful decisions, such as
-interrupting a ritual, protecting an ally or reaching a vulnerable opponent.
+encounter objectives. Each turn should offer useful decisions, such as stopping
+a ritual, protecting an ally or reaching a vulnerable opponent. Battles occupy
+selected major dungeon rooms, following the one-main-battle-per-floor pattern.
+Turn order, movement and action budgets, range, terrain, reaction opportunities
+and effect-duration rules remain open. The reference alone does not select a
+particular grid, agility formula or move-plus-action rule.
 
 Armor reduces damage from successful hits. Agility and positioning support
 avoidance separately. Correct weapons, materials and enchantments should confer
@@ -363,16 +505,27 @@ field camps by spending limited camping supplies; town remains a dependable
 place to recover. Precise spell and supply budgets, wound penalties, campsite
 requirements, retreat behavior and action timing remain to be designed.
 
-Unpaused combat should have measured, readable attacks, spell preparations and
-reactions. The player can pause to directly command any party member, with
-companions otherwise acting automatically. If the party wins, fallen companions
+Budget resources around a small number of substantial encounters, with optional
+secret battles adding a voluntary cost for a special reward. The main path must
+be viable without secret rewards or grinding extra fights. Whether and how any
+resources recover between encounters remains to be designed; a battle ending
+does not by itself establish a full recovery rule.
+
+The player directly commands individual characters in turn-based combat.
+Action presentation should clearly explain attacks, defenses and effects while
+keeping a larger party's turns brisk. Optional automation and animation-speed
+controls can be evaluated later. If the party wins, fallen companions
 recover at low health with a temporary wound cleared at a safe site. Reviving
 someone during combat requires a limited ability or item. Whole-party defeat
 returns the game state to a previous save.
 
-Allow saving during exploration and while combat is paused. Reloading restores
-the saved situation, including an unfinished temporary expedition and its combat
-progress. Autosave policy and the detailed save implementation remain open.
+Allow saving in the city, on the adventure map, during dungeon exploration and
+within tactical battles. Reloading restores the saved situation, including an
+unfinished expedition and its battle progress. Preserve the current acting
+character, turn order, spent actions, positions, effects, objectives and random
+state as required by the eventual rules. Autosave policy and the handling of
+save requests during movement or action playback remain open; mid-battle saving
+must not become a restart of the encounter.
 
 Communicate dodges, armor deflections, damage and magical resistance clearly in
 animation, sound and accessible explanations of the rules.
@@ -382,8 +535,10 @@ understand why an action succeeded or failed.
 
 ### 6. Companions as tactical partners and characters
 
-Support the hero plus up to three active companions selected from four
-recruitable characters. Give companions distinct roles, personal stories,
+Support the hero and a selected active team drawn from a recruitable roster.
+The simultaneous active limit includes the hero and is separate from total
+recruits. Evaluate teams larger than four; eight and twelve are study candidates,
+not commitments. Give companions distinct roles, personal stories,
 equipment development and contributions to discovery and dialogue. Their
 relationships with the hero and each other should develop through shared
 experiences.
@@ -393,8 +548,12 @@ and shared experiences remain individual, allowing party changes without having
 to grind advancement for a reserve. Each companion has access to the agreed
 dual-class and mentor skill-retraining rules.
 
-Companions act automatically when not directly commanded. The player can issue
-movement, target and ability orders to any member, including while paused.
+The player directly controls active companions during their tactical turns.
+Exploration should keep moving the group convenient; leader movement, following
+formations and deployment at an encounter are options still to compare. The
+rules for entering combat must preserve the approach actually discovered and
+taken, the participants and any relevant exploration state. Deployment must not
+grant an unexplored flank or remove an established obstacle for convenience.
 Companions use equipment systems with the same depth as the hero, with comparisons,
 recommendations and saved loadouts to keep party management convenient.
 
@@ -411,8 +570,8 @@ knowledge, relationships and supported actions. World threats remain independent
 of party level; travelling with fewer companions can increase the challenge.
 
 Companion identities and starting builds, recruitment and initial advancement,
-automatic behavior settings, personal stories and relationship thresholds still
-need detailed design. Fallen companions recover with wounds after a surviving
+roster size, optional automation, personal stories and relationship thresholds
+still need detailed design. Fallen companions recover with wounds after a surviving
 party's victory, as described in the combat rules above.
 
 **Design check:** changing a companion can affect both tactics and an adventure's
@@ -446,6 +605,12 @@ stakes appropriate to the player's investment in the item. Exact material
 families, recipes, costs, upgrade branches and equipment compatibility remain
 to be designed.
 
+Special secret rewards can be distinctive equipment, materials or techniques;
+their exact forms remain open. They should feel worth discovering while normal
+progression remains viable without them. Exploration loot and rewards from the
+main route must also sustain equipment growth. Test the burden of equipping the
+full active team, retaining comparisons and saved loadouts as it grows.
+
 **Design check:** an expedition can provide a worthwhile reward while the player
 keeps their signature item, and major improvements are visibly recognizable.
 
@@ -467,6 +632,12 @@ consequences and new frontiers. Quest selection should consider recent
 experiences and unfinished relationships to vary the rhythm of investigation,
 danger, discovery and conversation.
 
+Deliver essential story through discoveries, brief event choices and direct
+service interactions. A floor's main encounter gives it a point of tension; a
+lowest-floor boss can conclude a dungeon, while secret bonus encounters remain
+separate optional content. Foreshadowing and environmental storytelling are
+preferred ways to make these places intriguing between battles.
+
 Reserve time-based failure or changes for quests that clearly announce urgency.
 Most adventures should remain available while the player pursues other goals.
 
@@ -483,6 +654,9 @@ retains meaningful reasons to continue adventuring.
 
 These are distinct services supported by character relationships and quests.
 Their personal stories can also reveal side quests and main-story information.
+Open each service directly from the city screen and surface relevant new
+opportunities there. Keep equipment work accessible without repeating its
+associated story conversation on every visit.
 
 The blacksmith and enchanter support revising the appropriate upgrade branches
 at a cost, preserving a signature item's identity. The store owner helps source
@@ -515,8 +689,62 @@ quest needs a physical place that supports its objectives, alternative routes,
 encounters and discoveries. Quest generation and location generation must use
 the same requirements and stable references to rooms, characters and objects.
 
-The following design is proposed. Exact file formats, module dimensions,
-generation algorithms and performance budgets remain to be validated.
+### Dungeon exploration and battle pacing
+
+Agreed direction, 2026-09-14: explore connected passages and rooms, with selected
+major rooms accommodating turn-based tactical battles. Curiosity and the team's
+exploration abilities can reveal hidden loot and secret content between battles.
+The exploration spaces and battle rooms belong to the same dungeon.
+
+- **One main battle per floor is the usual pattern.** Provide enough space in
+  the selected major room for the eventual active party to participate meaningfully.
+- **Additional battles are optional secret content.** Discovering and completing
+  one yields a special reward. These encounters are bonus battles, not bosses;
+  a secret encounter is not required on every floor.
+- **Secret rewards remain optional.** The ordinary progression route must work
+  without finding or winning the bonus encounter. Ordinary hidden loot can also
+  reward exploration without requiring a battle.
+- **A dungeon may have a boss on its lowest floor.** When present, treat it as
+  that floor's main battle, keeping the usual one-main-battle pattern. It is
+  distinct from optional secret encounters.
+
+This is a selected design pattern, not a measured pacing result. The earlier
+comparison found precedents for dungeon exploration, tactical encounters and
+final-floor bosses, but did not establish an optimal battle count for this game.
+Battle duration, floor size, secret-encounter frequency, special rewards and the
+active party size remain to be determined through focused design and playtests.
+
+Use the blacksmith/mine acceptance slice to evaluate the pattern first. Its
+negotiation and infiltration alternatives still apply; a planned main encounter
+does not make combat the only valid way to resolve an adventure. Authored and
+generated layouts use the same requirements and runtime. Discoveries, loot,
+encounter outcomes and active battle state retain the persistence requirements
+below.
+
+### Designing the connected spaces
+
+Give exploration passages, optional branches and the main battle room distinct
+roles in each floor. Battle rooms need navigable space for the selected active
+party, enemy roles, approach and exit routes, and any objective interactions.
+Cover, elevation and hazards are possibilities to test, not mandatory features
+for every room. A large empty chamber alone is not a tactical design.
+
+Use clues, atmosphere and discoveries between encounters. Optional branches can
+contain unguarded hidden loot or a secret bonus battle with a special reward.
+Do not require a second battle simply to fill the floor, and do not hide an
+ordinary progression requirement behind optional secret content. A possible
+lowest-floor boss occupies the main encounter role rather than adding another
+mandatory battle. Dungeon depth and the frequency of secrets remain open.
+
+Define how exploration enters and leaves battle before finalizing room kits:
+participants, legal starting positions, discovered approaches, battle extent,
+retreat and pursuit limits, and what changes after an alternative resolution.
+Connected spaces describe the geography; they do not yet settle every transition
+or require unrestricted combat across the whole floor. Defeated inhabitants,
+opened shortcuts and collected rewards remain changed after the battle.
+
+The following technical design is proposed. Exact file formats, module
+dimensions, generation algorithms and performance budgets remain to be validated.
 
 ### A compact description backed by a shared asset library
 
@@ -530,9 +758,9 @@ Separate three kinds of information:
 
 | Record | Contents | Purpose |
 |---|---|---|
-| Generation recipe | Generator and content versions, seed, architectural family, region/depth threat profile, quest requirements and layout constraints | Request and reproduce a new candidate dungeon |
-| Resolved layout | Stable room and object IDs, module references, positions, orientations, connections, selected variants, encounters and quest bindings | Preserve the specific place accepted by the generator |
-| Saved changes and simulation state | Opened doors, collected loot, discoveries, defeated or moved inhabitants, quest outcomes, party positions and active combat state | Resume the same expedition and its consequences |
+| Generation recipe | Generator and content versions, seed, architectural family, region/depth threat profile, quest requirements, floor encounter roles and layout constraints | Request and reproduce a new candidate dungeon |
+| Resolved layout | Stable floor, room and object IDs, module references, positions, orientations, connections, selected variants, main/secret encounter bindings, optional final boss role, rewards and quest bindings | Preserve the specific place accepted by the generator |
+| Saved changes and simulation state | Opened doors, collected loot, discovered secrets, defeated or moved inhabitants, quest outcomes, active party, positions and tactical battle state | Resume the same expedition and its consequences |
 
 A seed alone is insufficient for the agreed persistence. Changes to the
 generator or asset catalogue can change its output. Keep the resolved layout
@@ -540,6 +768,12 @@ and gameplay-relevant placements, version content references, and provide a
 compatibility or migration policy for saved expeditions. Store meaningful
 spawn and reward choices so that returning or loading cannot reroll them.
 Cosmetic variation should not change layout, encounters or rewards.
+
+The eventual battle model also needs a stable description of legal positions,
+movement connections and gameplay-relevant terrain, consistent with the room
+geometry. Validate it after placement and decoration. Exact grid geometry and
+encoding remain undecided. Save rules-relevant turn order, spent actions,
+effect durations, objectives and random state independently of animation.
 
 The size goal concerns the per-dungeon description. Shared assets and the
 expanded scene still consume installation space and memory. As an illustrative
@@ -559,7 +793,8 @@ modules into locations. Combine:
   entrances and distinctive landmark spaces. Include alternate shapes and
   approaches with meaningful tactical differences.
 - Gameplay placements: typed attachment points for doors, clues, ore deposits,
-  captives, patrols, traps, treasure, refuges and other supported interactions.
+  captives, main and secret encounters, traps, treasure, refuges and other
+  supported interactions.
 - Dressing and atmosphere: compatible furnishings, damage, vegetation,
   materials, lighting, particles and ambient sound appropriate to the site's
   architecture, inhabitants and history.
@@ -583,6 +818,9 @@ generation does not require reshuffling persistent places on return.
 2. Propose connected spaces with a meaningful main route, optional discoveries,
    supported alternate approaches, shortcuts and an appropriate exit. Match
    those requirements against what the available room modules can supply.
+   Assign one main encounter per ordinary floor, optional secret encounters
+   with special rewards, and a possible boss replacing the lowest floor's main
+   encounter. Preserve each encounter's role in the accepted layout.
 3. Fit compatible modules and bind actual quest actors, objects and evidence
    to their supported placements. If the layout cannot support the adventure,
    revise or reject the candidate within a bounded generation process.
@@ -590,7 +828,9 @@ generation does not require reshuffling persistent places on return.
    must be reachable when needed, a promised approach must exist in the level,
    and the party must have a legal way to proceed or return. Account for skill,
    discovery and willing-companion requirements without making every route
-   automatically available to every party.
+   automatically available to every party. Check legal deployment, movement,
+   objective reachability and room capacity for the tested party size. The main
+   route must remain viable without secret rewards or clearing secret battles.
 5. Commit the accepted layout, then instantiate its environment and apply saved
    state. New generation must have a valid fallback if its attempt or time
    budget is exhausted.
@@ -612,14 +852,21 @@ that must be measured on the target machine.
 
 Room modules can provide prepared collision and navigation data, with their
 connections validated after assembly. Active party members, ongoing battles
-and relevant pursuing actors must remain supported across section boundaries.
+and their objectives must remain supported across section boundaries, including
+any reinforcements or pursuing actors allowed by the eventual encounter rules.
 Unloading presentation must not reset encounters or erase quest progress.
 
 Town visits and saves preserve the resolved layout and its current state,
-including paused combat. Completion or explicit abandonment permits retiring
-the location after the party leaves; discoveries, rewards and world consequences
-retain their agreed lifetime. These rules also apply when the original layout
-was assembled dynamically.
+including tactical battle state. Completion or explicit abandonment permits
+retiring the location after the party leaves; discoveries, rewards and world
+consequences retain their agreed lifetime. These rules also apply when the
+original layout was assembled dynamically.
+
+Keep regional map discoveries, routes and links to existing dungeon instances
+stable across city visits and saves. A map marker for an unfinished expedition
+must reopen that expedition. Define completion and departure clearly so players
+know when a temporary location and any uncollected secret content will retire;
+ordinary persistent locations retain their existing lifetime rules.
 
 ## Implications for the adventure toolkit
 
@@ -645,14 +892,15 @@ The proposed toolkit should provide:
   constrained layout assembly, and shared bindings between quest requirements
   and physical locations. Preserve the accepted layout independently of its
   loaded 3D representation.
-- A persistent record of characters, relationships, knowledge, discoveries,
-  equipment, services, locations and story progress.
+- A persistent record of characters, active party and reserves, relationships,
+  knowledge, map discoveries and routes, equipment, services, locations and
+  story progress. City and map screens observe the same state as the dungeon.
 - Separate lifetimes for persistent places and temporary expedition locations,
   preserving earned rewards and story consequences when temporary areas retire.
   Keep unfinished expeditions across saves and town visits until completion or
   explicit abandonment, and retire their location data after the party has left.
-- Save and resume both exploration and paused combat, including active temporary
-  expedition layouts, progress and encounters.
+- Save and resume city/map progress, dungeon exploration and tactical battles,
+  including active temporary expedition layouts, progress and encounters.
 - Reusable story patterns with conditions for when they make sense and effects
   that the game can execute and preserve.
 - Assembly that selects compatible participants and places, then establishes
@@ -664,7 +912,8 @@ The proposed toolkit should provide:
 - Threat definitions tied to places, depths and expedition conditions, while
   slower uncapped mastery develops the party independently of existing threats.
 - Checks for achievable objectives, valid dependencies, supported consequences
-  and consistency with established world facts.
+  and consistency with established world facts; validate floor encounter roles,
+  optional secret access and battle-space capacity alongside quest constraints.
 - Main-story truths and turning points that can be reached through suitable
   adventure paths, including alternatives when a particular path becomes unavailable.
 - Quest and dialogue conditions that support faction conflicts, companion
@@ -681,7 +930,7 @@ code-level findings from Sanctuary's End, Aetheria, Godotwind and Embermere RPG.
 They offer useful examples of equipment services, compact layouts, appearance
 recipes, streaming and validated state changes. Their inspected systems do not
 establish our complete combination of story-aware generation, independent
-adventure instances, persistent locations, four-character play and paused-combat
+adventure instances, persistent locations, larger-party tactical play and mid-battle
 saving. Treat them as study material while retaining those requirements.
 
 ### Working stack and remaining dependency choices
@@ -752,10 +1001,16 @@ Before choosing dependencies, verify one representative adventure can:
 
 - Generate different valid layouts with a coherent architectural identity and
   actual combat, social or exploration routes bound to the same quest.
-- Support the four-character party, camera, collisions and navigation through
-  room connections, including a battle near a section boundary.
+- Connect direct city preparation, regional map travel, dungeon exploration and
+  tactical battles through the same world and adventure state.
+- Support exploration movement, camera, collisions and tactical deployment at
+  explicitly recorded candidate party sizes, including a larger-than-four team
+  and a battle near a section boundary. No final party cap is implied by a trial.
+- Validate one main encounter per floor, optional secret bonus encounters and
+  rewards, and a possible lowest-floor boss occupying its main encounter role.
+  Support normal progress without clearing secret content.
 - Reconstruct from its compact records and shared assets, preserving unfinished
-  progress across town trips, paused-combat saves and reloads without rerolling
+  progress across town trips, mid-battle saves and reloads without rerolling
   threats or rewards.
 - Keep two instances of the same adventure or room template independent, grant
   rewards once, and retain world consequences after a temporary area retires.
@@ -764,6 +1019,8 @@ Before choosing dependencies, verify one representative adventure can:
   active memory and frame performance separately.
 
 These are proposed acceptance checks for later evaluation, not completed tests.
+The [blacksmith/mine evaluation](TOOLING_REVIEW.md#evaluation-before-a-fork-or-dependency-commitment)
+is the shared first acceptance slice for these requirements.
 
 ## Visual refinement and creature production
 
@@ -773,6 +1030,12 @@ equipment growth and readable full-party battles. Creature production starts
 from the game's own species designs and anatomy requirements. Reuse suitable rigging systems,
 animation techniques and compatible motion; assess any future finished asset
 against the intended creature instead of letting a catalogue define the bestiary.
+
+Apply that identity across the city screen, regional map, dungeon environment,
+party portraits and equipment inspection. City illustration and map styling
+remain to be designed; they need not reproduce a fully walkable environment.
+Dungeon lighting and sound should support mystery, while the battle view must
+make positions, ranges and objectives clear for the larger candidate parties.
 
 ### Rendering and the practical quality ceiling
 
@@ -817,6 +1080,12 @@ idle, movement and turns, attacks, reactions, defeat and applicable special
 abilities. Validate ground contact, weapon grip, hit timing, deformation and
 transitions at normal speed. A generated static mesh does not establish these
 capabilities; unusual anatomy may need dedicated rigging and motion.
+
+In tactical battles, animation communicates the resolved rules and must not own
+turn order, hit results or effect lifetimes. A save, a presentation unload or
+any future animation-speed setting must not alter the authoritative outcome.
+Measured turn-based playback still needs convincing movement, contact and
+reactions; it does not remove those production requirements.
 
 Keep editable creature masters and authored motion outside the game engine.
 Engine tools remain useful for importing, playback, blending and runtime
@@ -990,6 +1259,10 @@ resolved dialogue text for any voice production. Speech synthesis supplies the
 voice and delivery. Reuse approved voice references or presets for recurring
 NPCs and companions.
 
+Prioritize dungeon ambience, clues conveyed by sound, readable combat effects
+and concise character responses. Voice coverage remains open; extensive voiced
+town conversations are not a requirement of the city-screen experience.
+
 A proposed production approach is to prepare recurring speech and sound effects
 as reusable audio assets, then generate and cache complete resolved lines for
 new adventures when needed. Equipment sound can develop through material,
@@ -998,47 +1271,53 @@ runtime packaging and voice coverage remain design decisions.
 
 ## Remaining design work
 
-1. Draft the actual abilities and unlock paths for the twelve specializations,
-   shared class abilities, elective talents, the noncombat skill list, ancestry
-   traits and selectable backgrounds.
-2. Define class aptitude requirements, second-class mentor quests, class and
-   mastery advancement rates, numerical benefits and skill-retraining costs.
-3. Specify combat timing and resolution, armor mitigation, avoidance and
-   resistance formulas, spell tiers and use budgets, healing, wound effects,
-   field-camp supplies and site requirements, retreat and autosave behavior.
-4. Develop the four companions' identities, initial classes and advancement,
-   recruitment, personal arcs, automatic behavior settings, relationship
-   thresholds and reconciliation paths.
-5. Design signature-item branches, visual milestones, material families,
-   recipes, reforge and enchantment costs, compatibility and service unlocks.
-6. Write the town and faction identities, the canonical answers behind the
-   ancient-route mystery and its first chapter. Develop a complete example
-   adventure connecting conversations, party expertise, several resolutions,
-   equipment advancement and persistent consequences.
-7. Define the quest action vocabulary, discovery requirements, skill thresholds,
-   optional risks, advancement rewards and the triggers and time rules for
-   clearly urgent quests.
-8. Define dungeon families, room and connection conventions, supported physical
-   interactions, exploration patterns and visual variety. Evaluate compact
-   representation, generation time, party navigation and save compatibility
-   together in Unreal before selecting the dungeon toolkit and scaling production.
-9. Translate the selected visual direction into character, creature, material
-   and lighting references. Choose representative creature body families and
-   assess original modeling and rigging effort, complete animation coverage,
-   portable export, equipment effects and generated-dungeon rendering on the
-   intended hardware to validate the Blender/Rigify-to-Unreal workflow. Evaluate
-   adjustable bodies, compatible wardrobes, editable surface variants and
-   saved character recipes through the bounded customization trial before
-   expanding the roster or adopting additional character-tool dependencies.
-10. Define the public tools' initial scope, dependency and license choices,
-    stable data interfaces, engine adapter and contribution workflow. Verify
-    AI-assisted authoring through inspection, validation and in-engine feedback.
-    Support Unreal first while keeping shared adventure data and core rules
-    separate from engine-specific integration.
+### Resolve the experience before expanding content
 
-The core choices above are settled; the remaining work develops their content,
-numbers and detailed interactions. Target platforms, detailed controls,
-adventure/dungeon toolkit and save architecture, audio production choices,
-prototype size and production estimates follow the gameplay definition. Earlier
-suggestions such as a particular dungeon count or session length remain
-provisional.
+1. Compare simultaneous party sizes, including eight and twelve as candidates.
+   Assess useful turns, battle duration, room crowding, equipment effort and
+   companion identity. Set the active limit separately from the recruitable roster.
+2. Specify tactical movement and action budgets, turn order, targeting, terrain,
+   reactions, effect duration and enemy behavior. Decide exploration controls,
+   deployment, encounter extent, retreat and mid-battle save behavior together.
+3. Define city-service navigation and the adventure map: discovering and entering
+   locations, route choices, travel time and persistent markers. City development,
+   territorial systems and daily movement budgets are separate undecided options.
+4. Test the floor rhythm with a main battle, meaningful exploration, optional
+   secret content and a possible final-floor boss. Measure battle and exploration
+   time, backtracking, useful discoveries and voluntary secret participation.
+   One battle per floor is a chosen pattern, not a verified session-length target.
+5. Develop the blacksmith/mine slice across city preparation, map travel,
+   connected exploration, alternative resolutions, a tactical encounter and a
+   lasting equipment reward. Use the same validated data/runtime for an authored
+   first case and generated variants. Follow the tooling review's persistence,
+   instance-isolation and measurement checks before adopting dependencies.
+
+### Retained systems for later detailed design
+
+- Six classes and twelve specializations, optional dual-classing, permanent
+  class investments, mentor retraining and slower uncapped mastery remain the
+  full-game direction. Design their abilities and progression for tactical turns.
+- Develop companions' identities, recruitment, concise personal events,
+  relationships and reconciliation with the eventual roster size in mind.
+- Keep prepared spells, supplies, refuges, camps, wounds and defeat/reload rules;
+  tune their budgets around sparse major battles and optional secret risk.
+- Define signature equipment, branches, recipes, special secret rewards and
+  visible upgrades. Test convenience across the entire active party.
+- Write the town, factions and ancient-route mystery; deliver their consequences
+  through city services, map changes, discoveries and short meaningful choices.
+- Define the skill/action vocabulary, discovery clues, optional risks and
+  clearly announced deadlines. Secret content must remain optional for progress.
+- Develop dungeon families, compatible rooms, battle geometry and generation
+  constraints. Measure saving, loading, memory and rendering on the intended Mac.
+- Retain Unreal 5.8, Blender/Rigify and the free-tool/open-source boundaries.
+  Validate original creatures, motion and equipment first, then evaluate the
+  existing customization and audio candidates within their recorded limits.
+- Define reusable public-tool interfaces, licenses and the Unreal adapter after
+  the acceptance slice supplies evidence. No inspected reference is a verified
+  dependency for the new gameplay combination.
+
+The main experience and the explicitly agreed retained rules are the baseline.
+Exact party size, turn rules, floor dimensions, dungeon count, session length,
+first-release content breadth and production estimates remain open. The earlier
+proposal to postpone broad generation or progression systems is a sequencing
+option, not a removal of those full-game goals or an approved implementation plan.

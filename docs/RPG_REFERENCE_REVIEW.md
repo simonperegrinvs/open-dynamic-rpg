@@ -3,6 +3,11 @@
 Research date: 2026-09-13. Supports the [game concept](GAME_CONCEPT.md)
 and [tooling review](TOOLING_REVIEW.md).
 
+Our-game implications updated on 2026-09-14 for city-screen preparation,
+adventure-map travel, connected dungeon exploration and turn-based tactical
+battles with an open active-party limit. Pinned upstream findings and research
+dates are unchanged. This update does not claim a new source inspection or run.
+
 ## Assessment
 
 These four projects provide useful examples of AI-assisted game development,
@@ -174,8 +179,8 @@ skeletal animation. [Appearance schema][a-appearance], [hero model][a-hero],
 **Its companions solve a different problem.** The inspected summon handler
 removes an owner's existing companion before creating another, while shared
 definitions provide attacker, defender and support roles. It does not establish
-our hero plus three directly controllable companions, their equipment, party
-pathfinding or relationship arcs. [Companion definitions][a-companions],
+our directly controlled tactical party, its equipment, exploration movement,
+battle deployment or relationship arcs. [Companion definitions][a-companions],
 [summon and companion runtime][a-world].
 
 ### Persistence and quality limits
@@ -241,8 +246,8 @@ all. [README][g-readme], [quest manager][g-quests],
 
 The quest manager keys state by a quest ID; it is not a demonstrated runtime
 for multiple instances of the same generated story pattern. Nothing in the
-inspected streaming budget proves that quest actors, pursuing enemies or
-companions retain authoritative state when their visual cells unload. Our
+inspected streaming budget proves that quest actors, active battle participants
+or companions retain authoritative state when their visual cells unload. Our
 simulation lifetime must remain a separate requirement.
 
 Morrowind world data is an input to the sample, so this also does not furnish
@@ -296,14 +301,15 @@ The current quest data has one objective ID/count per definition, and the
 ledger allows up to eight records with unique quest IDs. Independent authored
 quests can coexist; two generated instances sharing a template ID still need a
 separate identity model. Greetings respond to available/active/ready/completed
-state, but this is not our planned branching conversation and world-fact
-director. [Quest data][e-quest-data], [quest component][e-quests],
+state, but this is not our planned contextual-choice and world-fact director
+across city services, the map and dungeon events.
+[Quest data][e-quest-data], [quest component][e-quests],
 [multi-quest contract][e-quest-contract].
 
 The save contract deliberately excludes position, current vitals, targets,
 aggro, cooldowns and temporary effects. Loading resets combat and restores
-vitals. It is a progression save, not a paused-combat or persistent-expedition
-snapshot. The equipment save records authored item identities and slots, not
+vitals. It is a progression save, not an in-progress battle or persistent
+expedition snapshot. The equipment save records authored item identities and slots, not
 unique item instances with individually rolled affixes, upgrade histories and
 visual recipes. Both distinctions matter for our design.
 [Save contract][e-save-contract], [save types][e-save],
@@ -328,16 +334,17 @@ do not copy or fork it into our public toolkit until reuse terms are established
 ## Implications for our tools
 
 These are research recommendations, not newly selected dependencies or changes
-to the agreed game concept.
+to the agreed game concept. Their implications below follow the revised
+gameplay direction; none is a locally validated implementation for it.
 
 | Tool area | Useful reference pattern | Work our game still requires |
 |---|---|---|
 | Content catalogue and diagnostics | Aetheria's shared definitions and cross-reference tests | Versioned IDs, world facts, asset/rig compatibility and actionable authoring errors |
 | Adventure director and quest adapter | Small event progression in Sanctuary; explicit routing/commit in Embermere | Template ID separate from instance ID, bound participants/places, alternative solutions, NPC knowledge, faction and companion consequences |
-| Dungeon recipes and provider interface | Sanctuary's logical room graph preceding mesh placement | Typed composable modules, multiple floors, constraints shared with the quest, navigation after decoration, bounded retries/fallback and stable resolved layout |
+| Dungeon recipes and provider interface | Sanctuary's logical room graph preceding mesh placement | Typed modules, floors with one main encounter and optional secret battles/rewards, optional final boss role, quest constraints, exploration and tactical reachability, bounded retries/fallback and stable resolved layout |
 | Equipment and services | Sanctuary's separate smith/enchanter operations; Embermere's inventory/equipment ownership | Persistent individual items, treasured-item development, craftspeople's story unlocks, materials/runes/VFX tied to actual item properties |
 | Character and creature production | Aetheria's appearance data; Godotwind's compatible-part assembly; Embermere's source/export metrics | Original master bodies, supported morph ranges, fitted wardrobes, rig/animation families, grips, materials and export validation |
-| Persistence inspector | Embermere's preflight and archive-version tests; Sanctuary's migration tests | Complete adventure/world changes, unique item state, four characters, paused combat and explicit content/generator migrations |
+| Persistence inspector | Embermere's preflight and archive-version tests; Sanctuary's migration tests | City/map and expedition changes, unique items, active party/reserves, discoveries, tactical turn state and explicit content/generator migrations |
 | Streaming and encounter diagnostics | Godotwind's budgets and source adapters | Keep authoritative party/quest/combat state alive independently of visible rooms; measure on our intended Mac |
 | AI authoring interface | Embermere's repeatable build/inspect/export process | Human and AI tools invoke the same validated domain operations and receive saved-state and visual feedback |
 
@@ -349,8 +356,10 @@ does not establish coherent generated adventures.
 ## Recommended follow-up order
 
 1. Use Sanctuary's loop and room-graph tests to refine our small blacksmith/mine
-   example: preparation, several routes, meaningful reward and visible equipment
-   improvement. Treat its reset-on-entry behavior as a comparison case.
+   example: direct city preparation, map travel, connected exploration, a main
+   tactical encounter with alternative resolutions, optional secret rewards and
+   visible equipment improvement. Treat its reset-on-entry behavior as a
+   comparison case.
 2. Use Embermere's ownership, save-validation and asset-production patterns to
    specify our own interfaces and acceptance evidence. Resolve its license only
    if direct reuse becomes desirable; no maintainer has been contacted.
@@ -363,8 +372,9 @@ does not establish coherent generated adventures.
 
 The existing [blacksmith/mine acceptance scenario](TOOLING_REVIEW.md#evaluation-before-a-fork-or-dependency-commitment)
 remains the decision test: concurrent generated adventures, several solutions,
-stable expedition state, exactly-once rewards, four-character navigation,
-paused-combat reload and explicit migration after content changes. No reviewed
+stable city/map and expedition state, exactly-once rewards, exploration and
+tactical deployment at candidate party sizes, mid-battle reload, floor encounter
+roles and explicit migration after content changes. No reviewed
 project has been shown here to pass that scenario.
 
 ## Reproducing or extending this review

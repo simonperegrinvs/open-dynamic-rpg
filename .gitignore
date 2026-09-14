@@ -1,0 +1,28 @@
+# Unreal Engine generated files
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+
+# Local IDE and operating-system files
+.DS_Store
+._*
+.AppleDouble
+.idea/
+.vscode/
+*.suo
+*.user
+*.userprefs
+
+# Generated or downloaded source material
+ArtSource/Generated/
+Downloads/
+External/
+Reference/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example

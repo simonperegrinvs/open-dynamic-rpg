@@ -384,7 +384,7 @@ void validate_layout(const json& layout, int party_size) {
         if (layout["floors"].size() == 2) {
             enemy_positions.insert({16, 1});
         }
-        for (const Hex entry_hex : neighbors(trigger)) {
+        for (const Hex& entry_hex : neighbors(trigger)) {
             if (!reachable.contains(entry_hex)) {
                 continue;
             }
@@ -1072,7 +1072,7 @@ void OdrSession::begin_battle(bool secret) {
             }
         }
         if (entry == trigger) {
-            for (const Hex neighbor : neighbors(trigger)) {
+            for (const Hex& neighbor : neighbors(trigger)) {
                 if (walkable(adventure["layout"], neighbor)) {
                     entry = neighbor;
                     break;

@@ -13,7 +13,7 @@ jobs:
     name: linux-portable
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Install LLVM 21 and Ruff 0.16.8
@@ -66,7 +66,7 @@ jobs:
     env:
       UE_ROOT: /Volumes/UE_5_8_APFS
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build portable library and stage game data
         run: |
           cmake --preset ue-release
@@ -87,7 +87,7 @@ jobs:
           rg 'ODR_SMOKE_PASS' build/packaged-smoke.log
       - name: Upload diagnostics on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mac-unreal-diagnostics
           path: |

@@ -42,7 +42,7 @@ then `ctest --preset dev`. Unreal requires staged content and the portable
 - [AI-assisted RPG reference review](docs/RPG_REFERENCE_REVIEW.md) — pinned
   source findings from Sanctuary's End, Aetheria, Godotwind and Embermere RPG.
 - [Development flow](docs/DEVELOPMENT.md) — exact checks, content and save
-  workflow, local Unreal use, runner setup and Luna/Sol review handoff.
+  workflow, local Unreal validation and Luna/Sol review handoff.
 - [Tool and license inventory](docs/TOOLS.md) — pinned versions and boundaries.
 - [Architecture decisions](docs/adr/0001-authoritative-session.md) — the
   authoritative simulation and related decisions.

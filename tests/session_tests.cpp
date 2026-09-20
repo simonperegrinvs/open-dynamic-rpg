@@ -113,7 +113,7 @@ void walk_to(const Session& session, std::pair<int, int> destination) {
     while (!pending.empty() && !previous.contains(destination)) {
         const auto point = pending.front();
         pending.pop();
-        for (const auto [dq, dr] : offsets) {
+        for (const auto& [dq, dr] : offsets) {
             const auto next = std::pair{point.first + dq, point.second + dr};
             if (allowed.contains(next) && !previous.contains(next)) {
                 previous[next] = point;

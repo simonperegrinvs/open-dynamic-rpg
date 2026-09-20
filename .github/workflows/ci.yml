@@ -83,7 +83,7 @@ jobs:
       - name: Package and run unattended mine smoke
         run: |
           "$UE_ROOT/Engine/Build/BatchFiles/RunUAT.sh" BuildCookRun -project="$PWD/Unreal/OpenDynamicRPG.uproject" -platform=Mac -clientconfig=Development -build -cook -stage -pak -package -archive -archivedirectory="$PWD/build/package" -unattended -nop4
-          "$PWD/build/package/Mac/OpenDynamicRPG.app/Contents/MacOS/OpenDynamicRPG" -odrsmoke -unattended -nullrhi -nosplash > build/packaged-smoke.log 2>&1
+          "$PWD/build/package/Mac/OpenDynamicRPG.app/Contents/MacOS/OpenDynamicRPG" -odrsmoke -unattended -nullrhi -nosplash -stdout -FullStdOutLogOutput > build/packaged-smoke.log 2>&1
           rg 'ODR_SMOKE_PASS' build/packaged-smoke.log
       - name: Upload diagnostics on failure
         if: failure()

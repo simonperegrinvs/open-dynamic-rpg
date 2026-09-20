@@ -42,7 +42,7 @@ cmake --build --preset release -j4
 python3 tools/measure.py --repeats 3
 ```
 
-For Unreal on this Mac from an APFS checkout, set `UE_ROOT=/Volumes/UE_5_8_APFS` in your shell, then run `tools/run_mac_ci.sh`. The script executes these exact commands:
+For Unreal on this Mac from an APFS checkout, set `UE_ROOT=/Volumes/UE_5_8_APFS` in your shell, then run `bash tools/run_mac_ci.sh`. The script executes these exact commands:
 
 ```sh
 cmake --preset ue-release
@@ -83,7 +83,7 @@ Do not create a separate Codex task automatically for every pass. An explicitly 
 
 The repository-scoped macOS ARM64 runner `odr-mac-mini` was registered on 2026-09-20 and verified online with the `odr-mac` label. Two project PR runs passed the portable Linux checks and the Unreal Editor/package/smoke checks on this runner. Sol review then identified a public-fork workflow bypass: a fork can change the `pull_request` workflow and request a repository-scoped self-hosted runner even if the original Mac job has a trust condition. The runner service was stopped and registration removed. The public workflow now uses GitHub-hosted Linux only. [ADR 0005](adr/0005-ci-trust-boundary.md) records the alternatives; do not re-register this runner with the public repository while fork PR workflow changes can reach it.
 
-Run `tools/run_mac_ci.sh` from an APFS checkout for local Mac validation and record the tested commit SHA in the review. Runner 2.337.0 remains installed at `/Users/simon/.local/share/odr-actions-runner` on APFS; its downloaded archive matched the SHA-256 recorded in [TOOLS.md](TOOLS.md). It previously ran under the `simon` account and has no signing secrets. A dedicated account would require macOS administrator credentials. The `main` branch protection rule must require `linux-portable` only until an isolated Mac CI route is installed and shown to report the tested commit. An automated Mac check is a desired acceptance condition, not a verified current result.
+Run `bash tools/run_mac_ci.sh` from an APFS checkout for local Mac validation and record the tested commit SHA in the review. Runner 2.337.0 remains installed at `/Users/simon/.local/share/odr-actions-runner` on APFS; its downloaded archive matched the SHA-256 recorded in [TOOLS.md](TOOLS.md). It previously ran under the `simon` account and has no signing secrets. A dedicated account would require macOS administrator credentials. The `main` branch protection rule must require `linux-portable` only until an isolated Mac CI route is installed and shown to report the tested commit. An automated Mac check is a desired acceptance condition, not a verified current result.
 
 When a Mac check fails, inspect Unreal's `Saved/Logs`, `build/reports/unreal/index.json`, the packaged smoke log, Xcode selection (`xcode-select -p`) and free disk space. Verify the portable `ue-release` library exists before Unreal Build Tool runs. If `._*` files appear in a package or source, move the checkout to APFS and clean generated directories. If automation appears idle after a test, use the semicolon form `Automation RunTests ODR.BlacksmithMine;Quit`; a separate comma-separated console `Quit` can stop or hang at the wrong time. Any future runner service and status should be inspected from its own installation and repository; do not use the de-registered public runner as proof of current CI.
 

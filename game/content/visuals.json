@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "placeholder.hero": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "hero", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Warrior": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Rogue": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Ranger": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Mage": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Cleric": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.Barbarian": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
+  "placeholder.enemy": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "enemy", "attachment_points": [] },
+  "placeholder.boss": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "boss", "attachment_points": [] },
+  "placeholder.floor": { "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "none", "attachment_points": [] },
+  "placeholder.objective": { "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "none", "attachment_points": [] },
+  "placeholder.blacksmith": { "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "none", "attachment_points": [] },
+  "placeholder.city": { "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "none", "attachment_points": [] },
+  "placeholder.mine": { "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "none", "attachment_points": [] },
+  "placeholder.ruins": { "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "none", "attachment_points": [] }
+}

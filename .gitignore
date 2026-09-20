@@ -1,6 +1,8 @@
 # Unreal Engine generated files
 Binaries/
 Build/
+build/
+Unreal/Content/Data/
 DerivedDataCache/
 Intermediate/
 Saved/

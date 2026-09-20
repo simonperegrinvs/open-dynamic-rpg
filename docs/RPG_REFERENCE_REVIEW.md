@@ -4,7 +4,7 @@ Research date: 2026-09-13. Supports the [game concept](GAME_CONCEPT.md)
 and [tooling review](TOOLING_REVIEW.md).
 
 Our-game implications updated on 2026-09-14 for city-screen preparation,
-adventure-map travel, connected dungeon exploration and turn-based tactical
+compact open-overworld travel, connected dungeon exploration and turn-based tactical
 battles with an open active-party limit. Pinned upstream findings and research
 dates are unchanged. This update does not claim a new source inspection or run.
 

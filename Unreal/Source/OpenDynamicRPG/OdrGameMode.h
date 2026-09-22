@@ -12,6 +12,11 @@ struct FOdrSceneLabel {
     FVector Position;
     FString Text;
     FLinearColor Color;
+    FString ActorId;
+    int32 HP = -1;
+    int32 MaxHP = -1;
+    bool bCurrent = false;
+    bool bSelected = false;
 };
 
 UCLASS()
@@ -47,6 +52,27 @@ class AOdrGameMode : public AGameModeBase {
     FString Status() const;
     FString Presentation() const;
     FString CanonicalState() const;
+    TSharedPtr<FJsonObject> ViewState() const {
+        return CachedState;
+    }
+    FString SelectedClass() const;
+    FString SelectedAncestry() const;
+    FString SelectedBackground() const;
+    FString LastFeedback() const {
+        return LastMessage;
+    }
+    FString Objective() const;
+    void ClickHex(FIntPoint Point);
+    void SelectActor(const FString& Id);
+    void CancelNavigation();
+    bool IsNavigating() const;
+    TArray<FIntPoint> PreviewPath(FIntPoint Destination) const;
+    bool IsWalkableHex(FIntPoint Point) const;
+    FIntPoint PartyHex() const;
+    void AdjustZoom(float Delta);
+    void FocusCamera();
+    static FVector HexToWorld(FIntPoint Point, float Height = 0.0f);
+    static FIntPoint WorldToHex(FVector Position);
     FString SelectedTargetId() const {
         return SelectedTarget;
     }
@@ -67,11 +93,11 @@ class AOdrGameMode : public AGameModeBase {
 
   private:
     void Refresh();
+    void AdvanceNavigation();
+    void BuildEnvironment(const TSharedPtr<FJsonObject>& State);
+    void UpdateCamera(const TSharedPtr<FJsonObject>& State, bool bForce = false);
     void SpawnMarker(const FString& VisualId, const FString& Label, int32 Q, int32 R, float Height);
     TSharedPtr<FJsonObject> Snapshot() const;
-    FString SelectedClass() const;
-    FString SelectedAncestry() const;
-    FString SelectedBackground() const;
     FString CurrentActorId(const TSharedPtr<FJsonObject>& State) const;
     bool IsUsableTarget(const TSharedPtr<FJsonObject>& Acting,
                         const TSharedPtr<FJsonObject>& Candidate, bool bCast, bool bArea) const;
@@ -79,8 +105,17 @@ class AOdrGameMode : public AGameModeBase {
 
     OdrSession* Session = nullptr;
     TSharedPtr<FJsonObject> Visuals;
+    TSharedPtr<FJsonObject> CachedState;
+    TArray<FIntPoint> NavigationQueue;
+    FTimerHandle NavigationTimer;
+    bool bFollowingPath = false;
     UPROPERTY()
     TArray<TObjectPtr<AActor>> SceneActors;
+    UPROPERTY()
+    TObjectPtr<AActor> Environment;
+    FString EnvironmentKey;
+    FString CameraPhase;
+    float CameraZoom = 1.0f;
     TArray<FOdrSceneLabel> SceneLabels;
     UPROPERTY()
     TObjectPtr<ACameraActor> SceneCamera;

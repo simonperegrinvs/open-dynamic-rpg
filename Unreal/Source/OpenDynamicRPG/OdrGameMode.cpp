@@ -7,11 +7,13 @@
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/MeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DirectionalLight.h"
+#include "Engine/PostProcessVolume.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "HAL/FileManager.h"
@@ -128,20 +130,61 @@ void AOdrGameMode::BeginPlay() {
         GetWorld()->SpawnActor<ACameraActor>(FVector(0.0, 0.0, 2800.0), FRotator(-90.0, 90.0, 0.0));
     if (SceneCamera != nullptr) {
         SceneCamera->GetCameraComponent()->SetProjectionMode(ECameraProjectionMode::Orthographic);
+        SceneCamera->GetCameraComponent()->SetConstraintAspectRatio(false);
         SceneCamera->GetCameraComponent()->SetOrthoWidth(3600.0f);
         if (APlayerController* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0)) {
             Controller->SetViewTarget(SceneCamera);
         }
     }
-    GetWorld()->SpawnActor<ADirectionalLight>(FVector(0.0, 0.0, 1500.0),
-                                              FRotator(-60.0, 25.0, 0.0));
+    if (auto* Key =
+            GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 1500), FRotator(-52, -35, 0))) {
+        Key->GetLightComponent()->SetIntensity(5.0f);
+        Key->GetLightComponent()->SetLightColor(FLinearColor(1.0f, 0.85f, 0.65f));
+        Cast<UDirectionalLightComponent>(Key->GetLightComponent())->SetForwardShadingPriority(1);
+    }
+    if (auto* Fill =
+            GetWorld()->SpawnActor<ADirectionalLight>(FVector(0, 0, 1500), FRotator(-40, 145, 0))) {
+        Fill->GetLightComponent()->SetIntensity(2.2f);
+        Fill->GetLightComponent()->SetLightColor(FLinearColor(0.52f, 0.72f, 1.0f));
+        Fill->GetLightComponent()->SetCastShadows(false);
+    }
+    if (auto* Post = GetWorld()->SpawnActor<APostProcessVolume>()) {
+        Post->bUnbound = true;
+        auto& Settings = Post->Settings;
+        Settings.bOverride_AutoExposureMethod = true;
+        Settings.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
+        Settings.bOverride_AutoExposureBias = true;
+        Settings.AutoExposureBias = -0.6f;
+        Settings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+        Settings.AutoExposureApplyPhysicalCameraExposure = false;
+        Settings.bOverride_BloomIntensity = true;
+        Settings.BloomIntensity = 0.25f;
+        Settings.bOverride_VignetteIntensity = true;
+        Settings.VignetteIntensity = 0.25f;
+        Settings.bOverride_AmbientOcclusionIntensity = true;
+        Settings.AmbientOcclusionIntensity = 0.7f;
+    }
     Refresh();
+    if (FParse::Param(FCommandLine::Get(), TEXT("odrpreviewbattle"))) {
+        FString Preview;
+        if (FFileHelper::LoadFileToString(Preview, *DataPath(TEXT("blacksmith_mine.jsonl")))) {
+            TArray<FString> Lines;
+            Preview.ParseIntoArrayLines(Lines, true);
+            for (const FString& Line : Lines) {
+                if (Line.IsEmpty() || Line.StartsWith(TEXT("#")))
+                    continue;
+                if (!Command(Line) || Phase() == TEXT("battle"))
+                    break;
+            }
+        }
+    }
     if (FParse::Param(FCommandLine::Get(), TEXT("odrsmoke"))) {
         OdrSmoke();
     }
 }
 
 void AOdrGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason) {
+    CancelNavigation();
     odr_destroy(Session);
     Session = nullptr;
     Super::EndPlay(EndPlayReason);
@@ -187,6 +230,9 @@ void AOdrGameMode::CycleBackground() {
 }
 
 bool AOdrGameMode::Command(const FString& JsonCommand) {
+    if (!bFollowingPath) {
+        CancelNavigation();
+    }
     if (Session == nullptr) {
         return false;
     }
@@ -201,7 +247,7 @@ bool AOdrGameMode::Command(const FString& JsonCommand) {
         if (State.IsValid() && State->TryGetArrayField(TEXT("events"), Events) &&
             Events != nullptr && !Events->IsEmpty()) {
             PresentationText = StringField(Events->Last()->AsObject(), TEXT("text"));
-            PresentationUntil = GetWorld()->GetTimeSeconds() + 0.75f;
+            PresentationUntil = GetWorld()->GetTimeSeconds() + 3.0f;
         }
     }
     Refresh();
@@ -414,6 +460,25 @@ void AOdrGameMode::CycleHealingTarget() {
 }
 
 void AOdrGameMode::ActOnSelected(bool bCast, bool bArea) {
+    if (!SelectedTarget.IsEmpty()) {
+        const auto State = Snapshot();
+        const auto Battle = ObjectField(State, TEXT("battle"));
+        TSharedPtr<FJsonObject> Acting;
+        TSharedPtr<FJsonObject> Target;
+        if (Battle.IsValid()) {
+            for (const auto& Value : Battle->GetArrayField(TEXT("actors"))) {
+                const auto Candidate = Value->AsObject();
+                if (StringField(Candidate, TEXT("id")) == CurrentActorId(State))
+                    Acting = Candidate;
+                if (StringField(Candidate, TEXT("id")) == SelectedTarget)
+                    Target = Candidate;
+            }
+        }
+        if (!IsUsableTarget(Acting, Target, bCast, bArea)) {
+            LastMessage = TEXT("Select a suitable target for that action.");
+            return;
+        }
+    }
     if (!SelectTargetForAction(bCast, bArea, false)) {
         return;
     }
@@ -445,6 +510,7 @@ void AOdrGameMode::ActOnNearest(bool bCast, bool bArea) {
 }
 
 void AOdrGameMode::SaveSession() {
+    CancelNavigation();
     if (Session == nullptr) {
         return;
     }
@@ -461,10 +527,11 @@ void AOdrGameMode::SaveSession() {
         UE_LOG(LogTemp, Warning, TEXT("%s"), *LastMessage);
         return;
     }
-    LastMessage = FString::Printf(TEXT("Saved to %s"), *Path);
+    LastMessage = TEXT("Expedition saved.");
 }
 
 void AOdrGameMode::LoadSession() {
+    CancelNavigation();
     if (Session == nullptr) {
         return;
     }
@@ -484,75 +551,6 @@ void AOdrGameMode::LoadSession() {
     Refresh();
 }
 
-void AOdrGameMode::SpawnMarker(const FString& VisualId, const FString& Label, int32 Q, int32 R,
-                               float Height) {
-    AActor* Marker = GetWorld()->SpawnActor<AActor>();
-    if (Marker == nullptr) {
-        return;
-    }
-    SceneActors.Add(Marker);
-    USceneComponent* Root = NewObject<USceneComponent>(Marker);
-    Marker->SetRootComponent(Root);
-    Marker->AddInstanceComponent(Root);
-    Root->RegisterComponent();
-    const FVector Location(145.0 * (Q + 0.5 * R), 126.0 * R, Height);
-    Marker->SetActorLocation(Location);
-
-    const auto Binding = ObjectField(Visuals, VisualId);
-    const FString ModelPath = StringField(Binding, TEXT("model"));
-    UMeshComponent* Mesh = nullptr;
-    if (StringField(Binding, TEXT("mesh_type")) == TEXT("skeletal") && !ModelPath.IsEmpty()) {
-        if (USkeletalMesh* Model = LoadObject<USkeletalMesh>(nullptr, *ModelPath)) {
-            USkeletalMeshComponent* Skeletal = NewObject<USkeletalMeshComponent>(Marker);
-            Skeletal->SetSkeletalMeshAsset(Model);
-            const FString AnimationClass = StringField(Binding, TEXT("animation_class"));
-            if (!AnimationClass.IsEmpty()) {
-                if (UClass* Animation = LoadClass<UAnimInstance>(nullptr, *AnimationClass)) {
-                    Skeletal->SetAnimInstanceClass(Animation);
-                }
-            }
-            Mesh = Skeletal;
-        }
-    }
-    if (Mesh == nullptr) {
-        FString MeshPath = ModelPath;
-        if (MeshPath.IsEmpty() || StringField(Binding, TEXT("mesh_type")) == TEXT("skeletal")) {
-            MeshPath = StringField(Binding, TEXT("fallback_mesh"));
-        }
-        UStaticMesh* MeshAsset =
-            MeshPath.IsEmpty() ? nullptr : LoadObject<UStaticMesh>(nullptr, *MeshPath);
-        if (MeshAsset == nullptr) {
-            MeshAsset = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
-        }
-        UStaticMeshComponent* Static = NewObject<UStaticMeshComponent>(Marker);
-        Static->SetStaticMesh(MeshAsset);
-        Mesh = Static;
-    }
-    Marker->AddInstanceComponent(Mesh);
-    Mesh->SetupAttachment(Root);
-    FVector Scale = Label.IsEmpty() ? FVector(0.8, 0.8, 0.10) : FVector(1.2, 1.2, 1.3);
-    if (VisualId == TEXT("placeholder.wall")) {
-        Scale = FVector(1.25, 1.25, 0.45);
-    } else if (VisualId == TEXT("placeholder.rough")) {
-        Scale = FVector(0.95, 0.95, 0.16);
-    }
-    Mesh->SetWorldScale3D(Scale);
-    const FString MaterialPath = StringField(Binding, TEXT("material"));
-    if (!MaterialPath.IsEmpty()) {
-        if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath)) {
-            Mesh->SetMaterial(0, Material);
-        }
-    }
-    Mesh->RegisterComponent();
-    if (!Label.IsEmpty()) {
-        const FLinearColor Color =
-            VisualId.Contains(TEXT("enemy")) || VisualId.Contains(TEXT("boss")) ? FLinearColor::Red
-            : VisualId.Contains(TEXT("hero")) ? FLinearColor(0.0f, 1.0f, 1.0f)
-                                              : FLinearColor::Yellow;
-        SceneLabels.Add({Location + FVector(0.0, 0.0, 170.0), Label, Color});
-    }
-}
-
 void AOdrGameMode::Refresh() {
     for (AActor* Marker : SceneActors) {
         if (IsValid(Marker)) {
@@ -566,55 +564,34 @@ void AOdrGameMode::Refresh() {
         return;
     }
     const FString CurrentPhase = StringField(State, TEXT("phase"));
-    if (SceneCamera != nullptr) {
-        if (CurrentPhase == TEXT("creation") || CurrentPhase == TEXT("city")) {
-            SceneCamera->SetActorLocation(FVector(220.0, 0.0, 2400.0));
-            SceneCamera->GetCameraComponent()->SetOrthoWidth(1600.0f);
-        } else if (CurrentPhase == TEXT("overworld")) {
-            SceneCamera->SetActorLocation(FVector(100.0, 0.0, 2400.0));
-            SceneCamera->GetCameraComponent()->SetOrthoWidth(2200.0f);
-        } else {
-            SceneCamera->SetActorLocation(FVector(1230.0, 0.0, 3000.0));
-            SceneCamera->GetCameraComponent()->SetOrthoWidth(3900.0f);
-        }
-    }
+    CachedState = State;
+    BuildEnvironment(State);
+    UpdateCamera(State);
     if (CurrentPhase == TEXT("creation") || CurrentPhase == TEXT("city")) {
         SpawnMarker(TEXT("placeholder.blacksmith"), TEXT("Blacksmith"), 0, 0, 0.0f);
         SpawnMarker(TEXT("placeholder.city"), TEXT("Town gate"), 3, 0, 0.0f);
         if (CurrentPhase == TEXT("city")) {
             SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), 1, 0, 0.0f);
+        } else {
+            SpawnMarker(TEXT("placeholder.hero"), TEXT(""), 1, 0, 0.0f);
         }
     } else if (CurrentPhase == TEXT("overworld")) {
         SpawnMarker(TEXT("placeholder.city"), TEXT("City"), 0, 0, 0.0f);
         SpawnMarker(TEXT("placeholder.mine"), TEXT("Mine"), 3, 1, 0.0f);
         SpawnMarker(TEXT("placeholder.ruins"), TEXT("Ruins"), -2, 1, 0.0f);
         const FIntPoint Party = PositionField(ObjectField(State, TEXT("world")), TEXT("pos"));
-        SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), Party.X, Party.Y, 100.0f);
+        SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), Party.X, Party.Y, 0.0f);
     } else if (CurrentPhase == TEXT("dungeon") || CurrentPhase == TEXT("battle")) {
         const auto Runs = ObjectField(State, TEXT("runs"));
         const auto Run = ObjectField(Runs, StringField(State, TEXT("active_run")));
         const auto Layout = ObjectField(Run, TEXT("layout"));
-        const TArray<TSharedPtr<FJsonValue>>* Tiles = nullptr;
-        if (Layout.IsValid() && Layout->TryGetArrayField(TEXT("tiles"), Tiles)) {
-            for (const auto& Tile : *Tiles) {
-                const FIntPoint Point = Position(Tile->AsArray());
-                SpawnMarker(TEXT("placeholder.floor"), TEXT(""), Point.X, Point.Y, -80.0f);
-            }
-        }
-        const TArray<TSharedPtr<FJsonValue>>* Walls = nullptr;
-        if (Layout.IsValid() && Layout->TryGetArrayField(TEXT("walls"), Walls) &&
-            Walls != nullptr) {
-            for (const auto& Wall : *Walls) {
-                const FIntPoint Point = Position(Wall->AsArray());
-                SpawnMarker(TEXT("placeholder.wall"), TEXT("WALL"), Point.X, Point.Y, -20.0f);
-            }
-        }
-        const TArray<TSharedPtr<FJsonValue>>* Rough = nullptr;
-        if (Layout.IsValid() && Layout->TryGetArrayField(TEXT("rough"), Rough) &&
-            Rough != nullptr) {
-            for (const auto& Tile : *Rough) {
-                const FIntPoint Point = Position(Tile->AsArray());
-                SpawnMarker(TEXT("placeholder.rough"), TEXT("ROUGH"), Point.X, Point.Y, -40.0f);
+        if (Layout.IsValid()) {
+            for (const TCHAR* Field : {TEXT("walls"), TEXT("rough")}) {
+                for (const auto& Tile : Layout->GetArrayField(Field)) {
+                    SceneLabels.Add({HexToWorld(Position(Tile->AsArray()), 30),
+                                     FString(Field) == TEXT("walls") ? TEXT("WALL") : TEXT("ROUGH"),
+                                     FLinearColor::Gray});
+                }
             }
         }
         const auto Objects = ObjectField(Layout, TEXT("objects"));
@@ -677,7 +654,7 @@ void AOdrGameMode::Refresh() {
         }
         if (CurrentPhase == TEXT("dungeon")) {
             const FIntPoint Party = PositionField(State, TEXT("mine_pos"));
-            SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), Party.X, Party.Y, 100.0f);
+            SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), Party.X, Party.Y, 0.0f);
         } else {
             const auto Battle = ObjectField(State, TEXT("battle"));
             const FIntPoint Approach = PositionField(Battle, TEXT("approach"));
@@ -696,9 +673,8 @@ void AOdrGameMode::Refresh() {
                         const FIntPoint Point = PositionField(Actor, TEXT("pos"));
                         const bool bCurrent =
                             StringField(Actor, TEXT("id")) == CurrentActorId(State);
-                        FString Label = bEnemy
-                                            ? FString::Printf(TEXT("E%d"), EnemyIndex)
-                                            : StringField(Actor, TEXT("name")).Left(7);
+                        FString Label = bEnemy ? FString::Printf(TEXT("E%d"), EnemyIndex)
+                                               : StringField(Actor, TEXT("name")).Left(7);
                         if (bCurrent) {
                             Label += TEXT("*");
                         }
@@ -706,7 +682,16 @@ void AOdrGameMode::Refresh() {
                             Label += TEXT(">");
                         }
                         SpawnMarker(StringField(Actor, TEXT("visual_id")), Label, Point.X, Point.Y,
-                                    bCurrent ? 180.0f : 100.0f);
+                                    0.0f);
+                        if (!SceneLabels.IsEmpty()) {
+                            auto& Badge = SceneLabels.Last();
+                            Badge.ActorId = StringField(Actor, TEXT("id"));
+                            Badge.Text = StringField(Actor, TEXT("name"));
+                            Badge.HP = NumberField(Actor, TEXT("hp"));
+                            Badge.MaxHP = NumberField(Actor, TEXT("max_hp"));
+                            Badge.bCurrent = bCurrent;
+                            Badge.bSelected = Badge.ActorId == SelectedTarget;
+                        }
                     }
                 }
             }
@@ -783,8 +768,8 @@ FString AOdrGameMode::Status() const {
                     ++EnemyIndex;
                 }
                 if (StringField(Actor, TEXT("id")) == SelectedTarget) {
-                    const FString Marker = bEnemy ? FString::Printf(TEXT("E%d: "), EnemyIndex)
-                                                   : FString();
+                    const FString Marker =
+                        bEnemy ? FString::Printf(TEXT("E%d: "), EnemyIndex) : FString();
                     Result += FString::Printf(TEXT("\nTarget: %s%s  HP %d/%d"), *Marker,
                                               *StringField(Actor, TEXT("name")),
                                               NumberField(Actor, TEXT("hp")),
@@ -853,7 +838,8 @@ void AOdrGameMode::OdrSmoke() {
             if (bSuccess && Line.Contains(TEXT("create_hero"))) {
                 bSuccess = SkeletalMarkerCountForAutomation() > 0;
                 if (!bSuccess) {
-                    UE_LOG(LogTemp, Error, TEXT("ODR smoke skeletal binding was not cooked or loaded"));
+                    UE_LOG(LogTemp, Error,
+                           TEXT("ODR smoke skeletal binding was not cooked or loaded"));
                 }
             }
             if (!bSuccess) {

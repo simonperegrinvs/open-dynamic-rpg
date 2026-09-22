@@ -1,0 +1,259 @@
+{
+  "blender": "5.2.1 LTS",
+  "license": "MIT",
+  "palette": {
+    "Stone": [
+      [
+        0.27,
+        0.32,
+        0.36
+      ],
+      0.92,
+      0
+    ],
+    "StoneLight": [
+      [
+        0.46,
+        0.49,
+        0.47
+      ],
+      0.88,
+      0
+    ],
+    "Rock": [
+      [
+        0.17,
+        0.23,
+        0.28
+      ],
+      0.95,
+      0
+    ],
+    "Road": [
+      [
+        0.36,
+        0.32,
+        0.25
+      ],
+      0.96,
+      0
+    ],
+    "Dirt": [
+      [
+        0.19,
+        0.15,
+        0.11
+      ],
+      1,
+      0
+    ],
+    "Grass": [
+      [
+        0.19,
+        0.29,
+        0.21
+      ],
+      0.96,
+      0
+    ],
+    "Leaf": [
+      [
+        0.12,
+        0.25,
+        0.2
+      ],
+      0.9,
+      0
+    ],
+    "Wood": [
+      [
+        0.22,
+        0.11,
+        0.055
+      ],
+      0.85,
+      0
+    ],
+    "WoodLight": [
+      [
+        0.45,
+        0.28,
+        0.12
+      ],
+      0.83,
+      0
+    ],
+    "Iron": [
+      [
+        0.23,
+        0.3,
+        0.34
+      ],
+      0.34,
+      0.75
+    ],
+    "Copper": [
+      [
+        0.72,
+        0.43,
+        0.14
+      ],
+      0.33,
+      0.65
+    ],
+    "Cloth": [
+      [
+        0.06,
+        0.36,
+        0.42
+      ],
+      0.9,
+      0
+    ],
+    "Skin": [
+      [
+        0.66,
+        0.43,
+        0.28
+      ],
+      0.85,
+      0
+    ],
+    "Hair": [
+      [
+        0.085,
+        0.045,
+        0.026
+      ],
+      0.95,
+      0
+    ],
+    "Glow": [
+      [
+        1.0,
+        0.3,
+        0.025
+      ],
+      0.6,
+      0
+    ],
+    "Crystal": [
+      [
+        0.15,
+        0.75,
+        0.85
+      ],
+      0.23,
+      0.35
+    ],
+    "Plaster": [
+      [
+        0.7,
+        0.63,
+        0.44
+      ],
+      0.98,
+      0
+    ],
+    "Roof": [
+      [
+        0.22,
+        0.3,
+        0.34
+      ],
+      0.8,
+      0.15
+    ],
+    "Coal": [
+      [
+        0.018,
+        0.026,
+        0.033
+      ],
+      1,
+      0
+    ]
+  },
+  "assets": [
+    {
+      "name": "SM_HexTile",
+      "skeletal": false,
+      "polygons": 16
+    },
+    {
+      "name": "SM_RockCluster",
+      "skeletal": false,
+      "polygons": 60
+    },
+    {
+      "name": "SM_Crystal",
+      "skeletal": false,
+      "polygons": 50
+    },
+    {
+      "name": "SM_Timber",
+      "skeletal": false,
+      "polygons": 234
+    },
+    {
+      "name": "SM_Torch",
+      "skeletal": false,
+      "polygons": 64
+    },
+    {
+      "name": "SM_Crate",
+      "skeletal": false,
+      "polygons": 208
+    },
+    {
+      "name": "SM_Barrel",
+      "skeletal": false,
+      "polygons": 104
+    },
+    {
+      "name": "SM_House",
+      "skeletal": false,
+      "polygons": 562
+    },
+    {
+      "name": "SM_Forge",
+      "skeletal": false,
+      "polygons": 394
+    },
+    {
+      "name": "SM_Gate",
+      "skeletal": false,
+      "polygons": 234
+    },
+    {
+      "name": "SM_Tree",
+      "skeletal": false,
+      "polygons": 40
+    },
+    {
+      "name": "SM_Ruins",
+      "skeletal": false,
+      "polygons": 150
+    },
+    {
+      "name": "SM_Chest",
+      "skeletal": false,
+      "polygons": 182
+    },
+    {
+      "name": "SM_Stairs",
+      "skeletal": false,
+      "polygons": 130
+    },
+    {
+      "name": "SM_Banner",
+      "skeletal": false,
+      "polygons": 38
+    },
+    {
+      "name": "SK_Adventurer",
+      "skeletal": true,
+      "polygons": 728
+    }
+  ]
+}

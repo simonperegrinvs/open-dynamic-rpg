@@ -8,16 +8,32 @@ measure the intended 30–45 minute player expedition.
 
 ## Ordinary controls
 
-Create the hero with 1–6 (class), C (ancestry), B (background), then Enter.
-In town, N recruits a companion, M accepts an authored mine and G accepts a
-generated mine. P activates all recruited characters for the twelve-person
-comparison. X enters or leaves the nearby destination. Q/W/E/A/S/D move one hex.
-The footer lists the available exploration and battle actions.
+Use the mouse for the primary pass. Choose a class, ancestry and background,
+then **Begin as Ari**. In town, recruit seven companions, select **Party of 8**,
+accept the mine expedition, then **Take the road**. The destination buttons
+walk to the mine, town or optional ruins; **Enter** enables on arrival.
+
+Inside the mine, click empty hexes to walk; hover previews the route. Approach
+landmarks until their contextual buttons enable. In battle, the teal outline
+and initiative row identify the acting character. Click a unit to select it,
+click terrain to move, then choose an action. Gold outlines identify the selected
+target. Health bars and the bottom party strip show damage. Save and Load work
+through the upper-right buttons, including between movement and action.
+
+Wheel zooms, middle-drag pans, right-drag rotates, Home resets the camera and
+Escape cancels pending travel/selection. Verify panel clicks never move the party.
+Repeat at 1280-by-720 if readability or pointer alignment looks wrong.
+
+Keyboard shortcuts remain available for comparison: 1–6 selects class, C cycles
+ancestry, B cycles background and Enter creates the hero. N recruits, M accepts
+authored content, G accepts generated content, P activates all recruits, X
+enters/leaves, and Q/W/E/A/S/D move one adjacent hex.
 
 In battle, T cycles enemy targets and Y cycles wounded allies for a Cleric.
 F attacks, C casts, Z uses a Mage's area spell, Space defends and R retreats
 when the core's entry-zone requirements are met. Check the current actor,
-remaining movement and selected target before acting. A star marks the acting character; > marks the selected target. Enemy map labels E1/E2 remain stable during the encounter; the target HUD gives the full name and HP. F5 saves and F9 loads.
+remaining movement and selected target before acting. Incompatible explicit
+targets must not redirect to another character. F5 saves and F9 loads.
 
 ## Required pass
 

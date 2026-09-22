@@ -15,4 +15,12 @@ The portable build and CI pin major compiler tooling and exact Python dependency
 | Blender and Rigify | Blender 5.2.1 LTS, build `9e2066aef7ef`; production Rigify workflow still to validate | Blender is [GPL](https://www.blender.org/about/license/). The original [two-bone binding probe](../ArtSource/BindingProbe/README.md) uses Blender's built-in armature and FBX tools; it does not depend on Rigify or an add-on. Source art remains separate from gameplay. |
 | GitHub Actions | `ubuntu-24.04` for portable checks; `actions/checkout` v7.0.1 pinned to a release commit. Mac ARM64 runner 2.337.0 archive SHA-256 `5a2cd92908a93d7276a194e1de6008099f3e7946f3f8e14aa7a1a7b4a31fdec2` | Hosted Linux CI is active. The Mac runner completed integration runs, then was moved from this public repository to a private companion for manually dispatched, exact-commit builds. It does not report a required public PR status. [Runner license](https://github.com/actions/runner/blob/main/LICENSE). |
 
-The game content, original binding probe and owned code use the repository [MIT license](../LICENSE). No code or art from the reference RPGs is imported. The binding probe's editable source, FBX and reproduction scripts live under `ArtSource/BindingProbe/` and `tools/art_probe/`; the imported Unreal assets live under `Unreal/Content/Art/BindingProbe/`. Record each future asset's source and license when added.
+The game content, original binding probe, [diorama kit](../ArtSource/Diorama/README.md)
+and owned code use the repository [MIT license](../LICENSE). No code or art from
+the reference RPGs is imported. The diorama kit was generated with Blender 5.2.1
+LTS using built-in geometry, armature and FBX tools; no add-on or downloaded art
+dependency was added. Its editable sources and FBX files live in
+`ArtSource/Diorama/`, reproduction scripts in `tools/art_probe/`, and imported
+assets in `Unreal/Content/Art/Diorama/`. The older two-bone integration probe stays
+in the corresponding `BindingProbe/` directories. Record each future asset's
+source and license when added.

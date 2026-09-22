@@ -21,7 +21,7 @@ facts and validated physical locations.
 ## Current status
 
 The first blacksmith/mine slice is implemented as a portable C++20 session,
-headless scenario runner and Unreal 5.8 placeholder host. Its authored loop
+headless scenario runner and Unreal 5.8 diorama with mouse controls. Its authored loop
 reaches a lasting equipment upgrade; generated variants use the same runtime.
 The project remains a prototype, with playtime and performance targets awaiting
 measurement. Blender and Rigify remain the portable character-art foundation.
@@ -46,6 +46,7 @@ then `ctest --preset dev`. Unreal requires staged content and the portable
 - [Tool and license inventory](docs/TOOLS.md) — pinned versions and boundaries.
 - [Content guide](docs/CONTENT.md) — templates, resolved runs and validation.
 - [Placeholder playtest](docs/PLAYTEST.md) — ordinary-control acceptance and measurements.
+- [Presentation guide](docs/PRESENTATION.md) — mouse interface, replaceable art and rebuilding the original Blender kit.
 - [Architecture decisions](docs/adr/0001-authoritative-session.md) — the
   authoritative simulation and related decisions.
 

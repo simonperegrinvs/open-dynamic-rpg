@@ -1,20 +1,136 @@
 {
   "schema_version": 1,
-  "placeholder.hero": { "mesh_type": "skeletal", "model": "/Game/Art/BindingProbe/SK_BindingProbe.SK_BindingProbe", "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "hero", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Warrior": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Rogue": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Ranger": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Mage": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Cleric": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.Barbarian": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "humanoid", "attachment_points": ["right_hand", "back"] },
-  "placeholder.enemy": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "enemy", "attachment_points": [] },
-  "placeholder.boss": { "mesh_type": "skeletal", "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "boss", "attachment_points": [] },
-  "placeholder.floor": { "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "none", "attachment_points": [] },
-  "placeholder.wall": { "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "none", "attachment_points": [] },
-  "placeholder.rough": { "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "none", "attachment_points": [] },
-  "placeholder.objective": { "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere", "animation_role": "none", "attachment_points": [] },
-  "placeholder.blacksmith": { "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "none", "attachment_points": [] },
-  "placeholder.city": { "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder", "animation_role": "none", "attachment_points": [] },
-  "placeholder.mine": { "fallback_mesh": "/Engine/BasicShapes/Cone.Cone", "animation_role": "none", "attachment_points": [] },
-  "placeholder.ruins": { "fallback_mesh": "/Engine/BasicShapes/Cube.Cube", "animation_role": "none", "attachment_points": [] }
+  "placeholder.hero": {
+    "mesh_type": "skeletal",
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere",
+    "animation_role": "hero",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Warrior": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cube.Cube",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Rogue": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cone.Cone",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Ranger": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Mage": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Cleric": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cube.Cube",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.Barbarian": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cone.Cone",
+    "animation_role": "humanoid",
+    "attachment_points": [
+      "right_hand",
+      "back"
+    ],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.enemy": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cone.Cone",
+    "animation_role": "enemy",
+    "attachment_points": [],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.boss": {
+    "mesh_type": "skeletal",
+    "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder",
+    "animation_role": "boss",
+    "attachment_points": [],
+    "model": "/Game/Art/Diorama/SK_Adventurer.SK_Adventurer",
+    "animation": "/Game/Art/Diorama/SK_Adventurer_Anim.SK_Adventurer_Anim"
+  },
+  "placeholder.floor": {
+    "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.wall": {
+    "fallback_mesh": "/Engine/BasicShapes/Cube.Cube",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.rough": {
+    "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.objective": {
+    "fallback_mesh": "/Engine/BasicShapes/Sphere.Sphere",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.blacksmith": {
+    "fallback_mesh": "/Engine/BasicShapes/Cube.Cube",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.city": {
+    "fallback_mesh": "/Engine/BasicShapes/Cylinder.Cylinder",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.mine": {
+    "fallback_mesh": "/Engine/BasicShapes/Cone.Cone",
+    "animation_role": "none",
+    "attachment_points": []
+  },
+  "placeholder.ruins": {
+    "fallback_mesh": "/Engine/BasicShapes/Cube.Cube",
+    "animation_role": "none",
+    "attachment_points": []
+  }
 }

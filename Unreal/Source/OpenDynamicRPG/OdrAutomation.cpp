@@ -165,6 +165,14 @@ bool FOdrPlayerAdapterTest::RunTest(const FString& Parameters) {
         Mode->RecruitNext();
     }
     const FString Town = Mode->CanonicalState();
+    for (const FIntPoint Hex : {FIntPoint(0, 0), FIntPoint(-3, 4), FIntPoint(17, -6)}) {
+        TestEqual(TEXT("mouse projection round trips an axial hex"),
+                  AOdrGameMode::WorldToHex(AOdrGameMode::HexToWorld(Hex)), Hex);
+    }
+    Mode->SelectActor(TEXT("rowan"));
+    TestEqual(TEXT("town inspection is presentation only"), Mode->CanonicalState(), Town);
+    TestTrue(TEXT("town inspection describes the companion"),
+             Mode->LastFeedback().Contains(TEXT("Rowan")));
     TestTrue(TEXT("original skeletal probe resolves in the game scene"),
              Mode->SkeletalMarkerCountForAutomation() > 0);
     Mode->RebuildPresentationForAutomation(TEXT("{}"));
@@ -180,6 +188,14 @@ bool FOdrPlayerAdapterTest::RunTest(const FString& Parameters) {
         !TestTrue(TEXT("leave city"), Mode->Command(TEXT("{\"action\":\"leave_city\"}")))) {
         return false;
     }
+    const FString BeforeRoute = Mode->CanonicalState();
+    Mode->ClickHex(FIntPoint(3, 1));
+    TestTrue(TEXT("mouse destination queues a route"), Mode->IsNavigating());
+    TestEqual(TEXT("queued presentation does not advance the simulation"), Mode->CanonicalState(),
+              BeforeRoute);
+    Mode->SaveSession();
+    TestFalse(TEXT("saving cancels pending pointer movement"), Mode->IsNavigating());
+    TestEqual(TEXT("save retains the reached location"), Mode->CanonicalState(), BeforeRoute);
     for (int32 Index = 0; Index < 3; ++Index) {
         Mode->Step(1, 0);
     }
@@ -282,12 +298,39 @@ bool FOdrPlayerAdapterTest::RunTest(const FString& Parameters) {
               BeforeNoHeal);
 
     const FString HeroId = ReadState(BattleBaseline)->GetStringField(TEXT("hero_id"));
+    auto Route = Fixture(HeroId);
+    for (const auto& Value : Route->GetObjectField(TEXT("battle"))->GetArrayField(TEXT("actors"))) {
+        const auto Member = Value->AsObject();
+        const auto& Point = Member->GetArrayField(TEXT("pos"));
+        if (Point[0]->AsNumber() == 4 && Point[1]->AsNumber() == -2)
+            SetPosition(Member, 3, -5);
+    }
+    SetPosition(BattleActor(Route, HeroId), 4, -2);
+    if (!LoadFixture(Route))
+        return false;
+    TestEqual(TEXT("preview finds the cheaper four-step route around two rough tiles"),
+              Mode->PreviewPath(FIntPoint(7, -2)).Num(), 4);
+    Mode->ClickHex(FIntPoint(7, -2));
+    TestEqual(
+        TEXT("portable rules accept the previewed four-cost route"),
+        BattleActor(ReadState(Mode->CanonicalState()), HeroId)->GetIntegerField(TEXT("move_left")),
+        0);
     auto Attack = Fixture(HeroId);
     SetPosition(BattleActor(Attack, HeroId), 6, 1);
     if (!LoadFixture(Attack)) {
         return false;
     }
-    Mode->Step(1, 0);
+    Mode->ClickHex(FIntPoint(7, 1));
+    TestFalse(TEXT("battle pointer movement applies as one command"), Mode->IsNavigating());
+    TestEqual(
+        TEXT("battle click spends the legal movement cost"),
+        BattleActor(ReadState(Mode->CanonicalState()), HeroId)->GetIntegerField(TEXT("move_left")),
+        3);
+    const FString BeforeSelection = Mode->CanonicalState();
+    Mode->SelectActor(TEXT("rowan"));
+    Mode->ActOnSelected(false);
+    TestEqual(TEXT("incompatible explicit target never redirects an attack"),
+              Mode->CanonicalState(), BeforeSelection);
     Mode->CycleEnemyTarget();
     const FString FirstEnemy = Mode->SelectedTargetId();
     Mode->CycleEnemyTarget();

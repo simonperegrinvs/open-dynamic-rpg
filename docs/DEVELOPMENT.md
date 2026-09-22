@@ -58,9 +58,24 @@ python3 tools/check_unreal_report.py
 rg 'ODR_SMOKE_PASS' build/packaged-smoke.log
 ```
 
-Open `Unreal/OpenDynamicRPG.uproject` in Unreal Editor for visual inspection or run the Development game. The mode creates its own camera and labeled primitives. On the creation screen, select class with 1–6, cycle ancestry with C and background with B, then press Enter. The on-screen footer gives phase-specific controls; F5 saves to Unreal's project Saved directory as `session.json`, and F9 loads. The packaged Mac app stores it under `~/Library/Containers/com.YourCompany.OpenDynamicRPG/Data/Library/Application Support/Epic/OpenDynamicRPG/Saved/`; the status line prints the actual path. The authored route is city recruitment and mine acceptance, hex travel to the mine, main battle, ore pickup, return to city, upgrade. The optional ruins, clue, hidden cache and secret fight can be explored without blocking normal progress. To replace a primitive, add a cooked `model` or `material` path under its `visual_id` in `game/content/visuals.json`; keep `fallback_mesh`. Set `mesh_type` to `skeletal` for rigged characters or creatures and optionally set `animation_class` to a cooked animation Blueprint class path. Static models use `mesh_type: static` or omit it. Attachment points and animation roles are contracts for future art integration, not combat inputs.
+Open `Unreal/OpenDynamicRPG.uproject` in Unreal Editor or run the packaged
+Development game. The [presentation guide](PRESENTATION.md) describes the original
+diorama assets, import recipe, mouse interface, camera and authority boundary.
+Follow the [mouse-first playtest](PLAYTEST.md) through creation, recruitment,
+travel, mine combat, ore recovery and the forge upgrade. Save/Load buttons and
+F5/F9 persist `session.json` under the project's Saved directory. The packaged
+Mac default is under
+`~/Library/Containers/com.YourCompany.OpenDynamicRPG/Data/Library/Application Support/Epic/OpenDynamicRPG/Saved/`.
+For an isolated manual pass, give the binary a unique `-UserDir` inside that app
+container; the packaged sandbox cannot write an arbitrary `/private/tmp` UserDir.
+Do not overwrite a player's existing save for automation.
 
-The [placeholder playtest](PLAYTEST.md) defines the ordinary-control acceptance pass. T cycles enemy targets, Y cycles wounded allies for healing, and F/C act on the selected target. The Mac report gate requires both Unreal tests and fails if either result is missing.
+Character bindings in `game/content/visuals.json` support cooked `model`,
+`material`, optional `animation_class` or `animation` sequence paths and a
+`fallback_mesh`. `mesh_type: skeletal` selects the skeletal path; static bindings
+can omit it. Visual substitution does not change saves or combat geometry.
+The Mac report gate requires both Unreal integration tests and fails if either
+is missing; rendered pointer usability remains a separate check.
 
 Original imported models live under `Unreal/Content/Art/`, which is explicitly cooked because JSON paths are not Unreal asset dependencies. Keep the editable source and reproduction recipe under `ArtSource/`.
 
@@ -97,7 +112,9 @@ When a Mac check fails, inspect Unreal's `Saved/Logs`, `build/reports/unreal/ind
 
 On this M4 Pro Mac (64 GB), the 2026-09-22 portable dev scenarios, formatting/static analysis, Python checks, content checks and documentation links passed. Address/undefined-behavior sanitizer scenarios passed in 26.89 seconds. Unreal 5.8.2 built with Xcode 26.6; both `ODR.BlacksmithMine` and `ODR.PlayerAdapter` passed with zero errors. The final Development cook/package and unattended `ODR_SMOKE_PASS` passed. These were local checks against this implementation; CI results must identify their own tested commit.
 
-The original Blender probe exported and imported successfully with a skeleton and animation sequence. Unreal automation loaded it, replaced it with primitives and rebuilt the presentation without changing canonical state. Packaged smoke required the cooked skeletal model to load. The sequence is not yet bound to runtime playback, and production Rigify/retargeting remains unvalidated.
+The later 2026-09-22 presentation pass exported and imported an original kit of fifteen static props and one skeletal adventurer with an idle sequence. The material importer explicitly enables instanced and skeletal usage and writes material slots back to the imported assets. Runtime bindings now play the idle sequence. Unreal automation loads the bound character, replaces it with primitives and rebuilds the presentation without changing canonical state; the packaged smoke requires the cooked skeletal model to load. Production Rigify/retargeting remains unvalidated. See [PRESENTATION.md](PRESENTATION.md) for ownership and reproducible art commands.
+
+The diorama pass also added passing adapter assertions for axial coordinates, weighted path previews, queued travel cancellation when saving, legal battle movement and refusal to redirect an incompatible explicit target. Rendered town and battle views were inspected locally. The Mac synthetic click tool supplied an unchanged system cursor position, so a real mouse pass is still pending; no mouse-only expedition completion is claimed. Updated frame and memory measurements, twelve-character HUD readability and a human pacing pass also remain to be recorded for this presentation.
 
 The following measurements were refreshed on 2026-09-22 for schema 2, after the save and content repairs. Three Release-build headless replays per party size produced these medians; `peak RSS` is the headless process, and the battle figures come from the deterministic test driver. `movement-only` means a party turn spent moving and defending without an attack. It is a navigation-pressure indicator, not a claim about human player mistakes. The raw result is in ignored local `build/measurements.json` and can be regenerated with `tools/measure.py`.
 
@@ -106,9 +123,9 @@ The following measurements were refreshed on 2026-09-22 for schema 2, after the 
 | 8 | 1.95 ms | 6,388 bytes | 1.93 ms | 2.95 MiB | 95 | 19 / 8 / 3 | 70 ms |
 | 12 | 1.82 ms | 7,212 bytes | 2.04 ms | 2.98 MiB | 108 | 23 / 11 / 2 | 114 ms |
 
-Both eight- and twelve-character authored expeditions completed through ordinary keyboard controls in the final rendered package, from creation to equipment upgrade. The saved battle and completed states matched a portable replay of the corresponding input commands. The eight-character pass saved/reloaded between movement and action, saved immediately during action presentation, and rejected a duplicate upgrade without changing state. Labels were inspected in both battles; long overlapping labels were replaced with compact map names and stable enemy markers, with current/target details in the HUD. This was agent-driven functional testing, not a human pacing or enjoyment assessment.
+Before the diorama presentation change, both eight- and twelve-character authored expeditions completed through ordinary keyboard controls in the rendered primitive package, from creation to equipment upgrade. The saved battle and completed states matched a portable replay of the corresponding input commands. The eight-character pass saved/reloaded between movement and action, saved immediately during action presentation, and rejected a duplicate upgrade without changing state. This was agent-driven functional testing, not a human pacing or enjoyment assessment, and does not establish the later mouse HUD's behavior.
 
-One 300-frame idle main-battle capture per party size used Unreal's console command `CsvProfile FRAMES=300` at 1440×900 windowed resolution. Raw CSVs and the summary remain in ignored local `build/ui-eight-frames.csv`, `build/ui-twelve-frames.csv` and `build/render-measurements.json`. RSS is a separate process snapshot, not peak memory.
+One 300-frame idle main-battle capture per party size used Unreal's console command `CsvProfile FRAMES=300` at 1440×900 windowed resolution in the earlier primitive presentation. These frame and memory figures do not describe the new diorama. Raw CSVs and the summary remain in ignored local `build/ui-eight-frames.csv`, `build/ui-twelve-frames.csv` and `build/render-measurements.json`. RSS is a separate process snapshot, not peak memory.
 
 | Active party | Median frame | 95th percentile | Maximum frame | Process RSS |
 | --- | ---: | ---: | ---: | ---: |

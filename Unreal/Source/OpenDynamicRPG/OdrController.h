@@ -34,6 +34,8 @@ class AOdrController : public APlayerController {
     void SearchOrCast();
     void BackgroundOrDefend();
     void Attack();
+    void CycleTarget();
+    void CycleHealingTarget();
     void AreaSpell();
     void RetreatOrRest();
     void Upgrade();

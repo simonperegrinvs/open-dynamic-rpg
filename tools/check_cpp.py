@@ -8,11 +8,20 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = (
-    "core/src/session.cpp",
-    "core/include/odr/session.h",
-    "tools/odr_tool.cpp",
-    "tests/session_tests.cpp",
+SOURCES = sorted(
+    path.relative_to(ROOT).as_posix()
+    for directory in ("core/src", "tools", "tests")
+    for path in (ROOT / directory).rglob("*.cpp")
+    if not path.name.startswith("._")
+)
+FILES = sorted(
+    set(SOURCES)
+    | {
+        path.relative_to(ROOT).as_posix()
+        for directory in ("core", "tools", "tests")
+        for path in (ROOT / directory).rglob("*")
+        if path.suffix in {".h", ".hpp"} and not path.name.startswith("._")
+    }
 )
 
 
@@ -40,9 +49,7 @@ def main() -> None:
         tidy,
         "-p",
         "build/dev",
-        "core/src/session.cpp",
-        "tools/odr_tool.cpp",
-        "tests/session_tests.cpp",
+        *SOURCES,
         "--quiet",
     ]
     if platform.system() == "Darwin":

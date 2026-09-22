@@ -45,6 +45,8 @@ jobs:
         run: |
           cmake --preset dev
           cmake --build --preset dev -j 4
+          build/dev/odr_tool --definition game/content/mine.json --validate > /dev/null
+          build/dev/odr_tool --definition game/content/quarry.json --validate > /dev/null
           python3 tools/check_cpp.py
           ctest --preset dev
           build/dev/odr_tool --script game/scenarios/blacksmith_mine.jsonl > build/headless-result.json

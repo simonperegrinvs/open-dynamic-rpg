@@ -35,11 +35,20 @@ std::string definition() {
     return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
 
-Session create() {
-    const std::string source = definition();
+std::string quarry_definition() {
+    std::ifstream input("game/content/quarry.json");
+    check(static_cast<bool>(input), "cannot open quarry definition");
+    return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
+}
+
+Session create_from(const std::string& source) {
     Session session(odr_create(source.c_str()), &odr_destroy);
     check(static_cast<bool>(session), "cannot create session");
     return session;
+}
+
+Session create() {
+    return create_from(definition());
 }
 
 json snapshot(const Session& session) {
@@ -221,6 +230,9 @@ void test_identity_validation_and_save() {
                     {"reward", "other iron"}});
     json before = snapshot(session);
     const std::string second_id = before["active_run"].get<std::string>();
+    check(!send(session, {{"action", "create_run"}, {"participant", 7}}),
+          "non-string run participant override was accepted");
+    check(snapshot(session) == before, "invalid run metadata changed authoritative state");
     check(first_id != second_id, "concurrent runs must have distinct IDs");
     check(before["runs"][first_id]["participant"] != before["runs"][second_id]["participant"],
           "run bindings leaked");
@@ -238,6 +250,11 @@ void test_identity_validation_and_save() {
     const std::string bad = incompatible.dump();
     check(!odr_load(restored.get(), bad.c_str()), "incompatible save was accepted");
     check(snapshot(restored) == before, "failed load overwrote the previous session");
+    json legacy = before;
+    legacy["schema_version"] = 1;
+    check(!odr_load(restored.get(), legacy.dump().c_str()),
+          "version-one save was accepted after the schema bump");
+    check(snapshot(restored) == before, "legacy save rejection overwrote the previous session");
 
     const auto expect_bad_save = [&restored, &before](const json& corrupted, const char* message) {
         check(odr_load(restored.get(), corrupted.dump().c_str()) == 0, message);
@@ -280,6 +297,57 @@ void test_identity_validation_and_save() {
     json missing_active_run = battle_save;
     missing_active_run.erase("active_run");
     expect_bad_save(missing_active_run, "dungeon save without active run was accepted");
+    json missing_run_changes = battle_save;
+    missing_run_changes["runs"][missing_run_changes["active_run"].get<std::string>()].erase(
+        "changes");
+    expect_bad_save(missing_run_changes, "save without active run changes was accepted");
+    json missing_enemy_actor = battle_save;
+    std::string removed_enemy;
+    for (auto it = missing_enemy_actor["battle"]["actors"].begin();
+         it != missing_enemy_actor["battle"]["actors"].end(); ++it) {
+        if ((*it)["team"] == "enemy") {
+            removed_enemy = (*it)["id"].get<std::string>();
+            missing_enemy_actor["battle"]["actors"].erase(it);
+            break;
+        }
+    }
+    check(!removed_enemy.empty(), "battle fixture has no enemy actor");
+    auto& enemy_order = missing_enemy_actor["battle"]["order"];
+    enemy_order.erase(std::remove(enemy_order.begin(), enemy_order.end(), removed_enemy),
+                      enemy_order.end());
+    expect_bad_save(missing_enemy_actor,
+                    "save missing a live enemy actor and order entry was accepted");
+    json actor_on_dead_cell = battle_save;
+    actor_on_dead_cell["battle"]["actors"][1]["hp"] = 0;
+    actor_on_dead_cell["battle"]["actors"][0]["pos"] =
+        actor_on_dead_cell["battle"]["actors"][1]["pos"];
+    check(odr_load(restored.get(), actor_on_dead_cell.dump().c_str()) != 0,
+          std::string("valid dead-cell battle save was rejected: ") + odr_error(restored.get()));
+    check(snapshot(restored) == actor_on_dead_cell, "dead-cell battle save changed while loading");
+    json actor_in_wall = battle_save;
+    actor_in_wall["battle"]["actors"][0]["pos"] =
+        actor_in_wall["runs"][actor_in_wall["active_run"].get<std::string>()]["layout"]["walls"][0];
+    check(odr_load(restored.get(), actor_in_wall.dump().c_str()) == 0,
+          "battle actor outside walkable layout was accepted");
+    check(snapshot(restored) == actor_on_dead_cell,
+          "failed walkability load overwrote the prior valid state");
+    json divergent_enemy_hp = battle_save;
+    for (auto& actor : divergent_enemy_hp["battle"]["actors"]) {
+        if (actor["team"] == "enemy") {
+            actor["hp"] = actor["hp"].get<int>() - 1;
+            break;
+        }
+    }
+    check(odr_load(restored.get(), divergent_enemy_hp.dump().c_str()) != 0,
+          "valid battle HP divergence was rejected");
+    check(snapshot(restored) == divergent_enemy_hp, "battle HP divergence changed while loading");
+    json inconsistent_progress = before;
+    inconsistent_progress["runs"][inconsistent_progress["active_run"].get<std::string>()]["changes"]
+                         ["ore_taken"] = true;
+    check(odr_load(restored.get(), inconsistent_progress.dump().c_str()) == 0,
+          "inconsistent run reward progress was accepted");
+    check(snapshot(restored) == divergent_enemy_hp,
+          "failed progress load overwrote the prior valid state");
 }
 
 void test_world_and_retreat() {
@@ -537,6 +605,38 @@ void test_generated_fallback() {
     check(run["layout_source"] == "authored_fallback", "bounded fallback was not used");
     check(run["generation_diagnostics"].size() == 2, "rejected candidates were not diagnosed");
     check(run["layout"]["seed"] == 91, "accepted fallback seed was not recorded");
+
+    auto moved_session = create();
+    make_hero(moved_session);
+    apply(moved_session, {{"action", "create_run"}});
+    json moved_layout = snapshot(
+        moved_session)["runs"][snapshot(moved_session)["active_run"].get<std::string>()]["layout"];
+    moved_layout["enemy_positions"]["main"][0]["pos"] = {13, -1};
+    apply(moved_session, {{"action", "create_run"},
+                          {"mode", "generated"},
+                          {"seed", 7},
+                          {"candidate_layouts", json::array({moved_layout})}});
+    const json moved_run =
+        snapshot(moved_session)["runs"][snapshot(moved_session)["active_run"].get<std::string>()];
+    check(moved_run["layout"]["enemy_positions"]["main"][0]["pos"] == json::array({13, -1}) &&
+              moved_run["main_enemies"][0]["pos"] == json::array({13, -1}),
+          "accepted candidate enemy position was not authoritative");
+    auto incomplete_session = create();
+    make_hero(incomplete_session);
+    apply(incomplete_session, {{"action", "create_run"}});
+    json incomplete_layout = snapshot(
+        incomplete_session)["runs"][snapshot(incomplete_session)["active_run"].get<std::string>()]
+                           ["layout"];
+    incomplete_layout["enemy_positions"]["main"] = json::array();
+    apply(incomplete_session, {{"action", "create_run"},
+                               {"mode", "generated"},
+                               {"candidate_layouts", json::array({incomplete_layout})},
+                               {"max_attempts", 1}});
+    const json incomplete_run = snapshot(
+        incomplete_session)["runs"][snapshot(incomplete_session)["active_run"].get<std::string>()];
+    check(incomplete_run["layout_source"] == "authored_fallback" &&
+              incomplete_run["generation_diagnostics"].size() == 1,
+          "incomplete candidate spawn bindings did not fall back with a diagnostic");
 }
 
 void test_secret_and_lowest_floor_boss() {
@@ -612,6 +712,97 @@ void test_levels_one_to_three() {
           "prototype allowed a fourth level");
 }
 
+void test_quarry_content_bindings() {
+    auto session = create_from(quarry_definition());
+    make_hero(session);
+    for (const char* id : {"rowan", "sable", "tala", "iona", "bran", "kora", "eden"}) {
+        apply(session, {{"action", "recruit"}, {"id", id}});
+    }
+    apply(session, {{"action", "create_run"}, {"mode", "authored"}});
+    json state = snapshot(session);
+    const std::string run_id = state["active_run"].get<std::string>();
+    const auto& run = state["runs"][run_id];
+    check(run["content_schema_version"] == 2, "quarry content schema was not resolved");
+    check(run["participant"] == "quarry prospectors" && run["location"] == "blue stone quarry" &&
+              run["reward"] == "blue stone",
+          "quarry defaults were not resolved from content");
+    check(run["main_enemies"].size() == 2 && run["secret_enemies"].size() == 2,
+          "quarry encounter bindings have the wrong enemy counts");
+    check(run["rewards"]["cache_gold"] == 25 && run["rewards"]["ore_quantity"] == 2,
+          "quarry reward quantities were not resolved");
+    auto shared_retreat = create_from(quarry_definition());
+    make_hero(shared_retreat);
+    for (const char* id : {"rowan", "sable", "tala", "iona", "bran", "kora", "eden"}) {
+        apply(shared_retreat, {{"action", "recruit"}, {"id", id}});
+    }
+    apply(shared_retreat, {{"action", "create_run"}});
+    reach_mine(shared_retreat);
+    apply(shared_retreat, {{"action", "begin_main"}});
+    apply(shared_retreat, {{"action", "retreat"}});
+    const std::string shared_retreat_save = odr_save(shared_retreat.get());
+    auto shared_retreat_loaded = create_from(quarry_definition());
+    check(odr_load(shared_retreat_loaded.get(), shared_retreat_save.c_str()) != 0,
+          "quarry shared encounter spawn retreat save was rejected");
+    auto mine = create();
+    make_hero(mine);
+    apply(mine, {{"action", "create_run"}});
+    check(
+        run["layout"]["objects"] !=
+            snapshot(
+                mine)["runs"][snapshot(mine)["active_run"].get<std::string>()]["layout"]["objects"],
+        "quarry did not resolve distinct authored bindings");
+    const std::string save = odr_save(session.get());
+    auto restored = create_from(quarry_definition());
+    check(odr_load(restored.get(), save.c_str()) != 0 && snapshot(restored) == state,
+          "quarry authored save did not roundtrip");
+    apply(session, {{"action", "create_run"}, {"mode", "generated"}, {"seed", 11}});
+    const json generated = snapshot(session);
+    check(generated["runs"][generated["active_run"].get<std::string>()]["layout_source"] ==
+              "generated",
+          "quarry generated layout was not accepted");
+    apply(session, {{"action", "select_run"}, {"id", run_id}});
+    reach_mine(session);
+    walk_to(session, {5, 5});
+    apply(session, {{"action", "search"}});
+    apply(session, {{"action", "take_hidden_loot"}});
+    check(snapshot(session)["inventory"]["gold"] == 55, "quarry cache reward was not resolved");
+    walk_to(session, {7, 0});
+    apply(session, {{"action", "begin_main"}});
+    win_battle(session);
+    walk_to(session, {14, 1});
+    apply(session, {{"action", "take_ore"}});
+    check(snapshot(session)["inventory"]["ore"] == 2,
+          "quarry ore reward quantity was not resolved");
+    const std::string progressed_save = odr_save(session.get());
+    json updated_definition = json::parse(quarry_definition());
+    updated_definition["defaults"]["reward"] = "changed future reward";
+    updated_definition["encounters"]["main"][0]["name"] = "Changed Future Sentinel";
+    auto updated = create_from(updated_definition.dump());
+    check(odr_load(updated.get(), progressed_save.c_str()) != 0 &&
+              snapshot(updated) == snapshot(session),
+          "quarry save did not load under updated content definition");
+    json bad = state;
+    bad["runs"][run_id]["main_enemies"][0]["pos"] = {99, 99};
+    check(odr_load(restored.get(), bad.dump().c_str()) == 0,
+          "quarry save with invalid encounter placement was accepted");
+    json malformed = json::parse(quarry_definition());
+    malformed["encounters"]["main"][0]["hp"] = 0;
+    check(odr_create(malformed.dump().c_str()) == nullptr,
+          "malformed quarry enemy stats were accepted");
+    malformed = json::parse(quarry_definition());
+    malformed["encounters"]["secret"][0]["suffix"] = malformed["encounters"]["main"][0]["suffix"];
+    check(odr_create(malformed.dump().c_str()) == nullptr,
+          "duplicate quarry encounter IDs were accepted");
+    malformed = json::parse(quarry_definition());
+    malformed["mine"].erase("ore");
+    check(odr_create(malformed.dump().c_str()) == nullptr,
+          "quarry definition without ore objective was accepted");
+    malformed = json::parse(quarry_definition());
+    malformed["recruits"][0].erase("class");
+    check(odr_create(malformed.dump().c_str()) == nullptr,
+          "quarry definition with malformed recruit was accepted");
+}
+
 } // namespace
 
 int main() {
@@ -627,6 +818,7 @@ int main() {
         test_generated_fallback();
         test_secret_and_lowest_floor_boss();
         test_levels_one_to_three();
+        test_quarry_content_bindings();
         std::cout << "session scenarios passed\n";
         return 0;
     } catch (const std::exception& error) {

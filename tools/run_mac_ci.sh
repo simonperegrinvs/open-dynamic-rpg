@@ -12,6 +12,8 @@ fi
 
 cmake --preset ue-release
 cmake --build --preset ue-release -j 4
+build/ue-release/odr_tool --definition game/content/mine.json --validate > /dev/null
+build/ue-release/odr_tool --definition game/content/quarry.json --validate > /dev/null
 python3 tools/stage_content.py
 python3 tools/stage_content.py --check
 
@@ -20,10 +22,12 @@ python3 tools/stage_content.py --check
   -project="$repo_root/Unreal/OpenDynamicRPG.uproject" \
   -waitmutex -NoHotReload
 
+cmp build/ue-release/libodr_core.dylib Unreal/Binaries/Mac/libodr_core.dylib
+
 "$ue_root/Engine/Binaries/Mac/UnrealEditor-Cmd" \
   "$repo_root/Unreal/OpenDynamicRPG.uproject" \
-  -unattended -nullrhi -nosplash \
-  -ExecCmds='Automation RunTests ODR.BlacksmithMine;Quit' \
+  -unattended -nullrhi -nosplash -stdout -FullStdOutLogOutput \
+  -ExecCmds='Automation RunTests ODR.;Quit' \
   -ReportExportPath="$repo_root/build/reports/unreal"
 python3 tools/check_unreal_report.py
 

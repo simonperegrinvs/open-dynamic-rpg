@@ -44,6 +44,8 @@ then `ctest --preset dev`. Unreal requires staged content and the portable
 - [Development flow](docs/DEVELOPMENT.md) — exact checks, content and save
   workflow, local Unreal validation and Luna/Sol review handoff.
 - [Tool and license inventory](docs/TOOLS.md) — pinned versions and boundaries.
+- [Content guide](docs/CONTENT.md) — templates, resolved runs and validation.
+- [Placeholder playtest](docs/PLAYTEST.md) — ordinary-control acceptance and measurements.
 - [Architecture decisions](docs/adr/0001-authoritative-session.md) — the
   authoritative simulation and related decisions.
 

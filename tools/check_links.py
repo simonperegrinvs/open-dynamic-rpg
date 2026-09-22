@@ -12,7 +12,11 @@ LINK = re.compile(r"!?\[[^\]]*\]\((<[^>]+>|[^)]+)\)")
 
 def main() -> None:
     failures: list[str] = []
-    pages = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
+    pages = [
+        ROOT / "README.md",
+        *sorted((ROOT / "docs").rglob("*.md")),
+        *sorted((ROOT / "ArtSource").rglob("*.md")),
+    ]
     for page in pages:
         if page.name.startswith("._"):
             continue

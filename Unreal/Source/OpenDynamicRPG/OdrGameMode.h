@@ -38,10 +38,23 @@ class AOdrGameMode : public AGameModeBase {
     void SetAllActive();
     void LevelHero();
     void ActOnNearest(bool bCast, bool bArea = false);
+    void CycleTarget();
+    void CycleEnemyTarget();
+    void CycleHealingTarget();
+    void ActOnSelected(bool bCast, bool bArea = false);
     FString Phase() const;
     FString Help() const;
     FString Status() const;
     FString Presentation() const;
+    FString CanonicalState() const;
+    FString SelectedTargetId() const {
+        return SelectedTarget;
+    }
+    void RebuildPresentationForAutomation(const FString& Bindings = FString());
+    int32 SkeletalMarkerCountForAutomation() const;
+    void SetAutomationSavePath(const FString& Path) {
+        AutomationSavePath = Path;
+    }
     ACameraActor* Camera() const {
         return SceneCamera;
     }
@@ -59,6 +72,10 @@ class AOdrGameMode : public AGameModeBase {
     FString SelectedClass() const;
     FString SelectedAncestry() const;
     FString SelectedBackground() const;
+    FString CurrentActorId(const TSharedPtr<FJsonObject>& State) const;
+    bool IsUsableTarget(const TSharedPtr<FJsonObject>& Acting,
+                        const TSharedPtr<FJsonObject>& Candidate, bool bCast, bool bArea) const;
+    bool SelectTargetForAction(bool bCast, bool bArea, bool bCycle);
 
     OdrSession* Session = nullptr;
     TSharedPtr<FJsonObject> Visuals;
@@ -73,4 +90,6 @@ class AOdrGameMode : public AGameModeBase {
     int32 ClassIndex = 0;
     int32 AncestryIndex = 0;
     int32 BackgroundIndex = 0;
+    FString SelectedTarget;
+    FString AutomationSavePath;
 };

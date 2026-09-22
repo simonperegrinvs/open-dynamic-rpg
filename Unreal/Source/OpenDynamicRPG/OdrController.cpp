@@ -42,6 +42,8 @@ void AOdrController::SetupInputComponent() {
     InputComponent->BindKey(EKeys::C, IE_Pressed, this, &AOdrController::SearchOrCast);
     InputComponent->BindKey(EKeys::B, IE_Pressed, this, &AOdrController::BackgroundOrDefend);
     InputComponent->BindKey(EKeys::F, IE_Pressed, this, &AOdrController::Attack);
+    InputComponent->BindKey(EKeys::T, IE_Pressed, this, &AOdrController::CycleTarget);
+    InputComponent->BindKey(EKeys::Y, IE_Pressed, this, &AOdrController::CycleHealingTarget);
     InputComponent->BindKey(EKeys::Z, IE_Pressed, this, &AOdrController::AreaSpell);
     InputComponent->BindKey(EKeys::R, IE_Pressed, this, &AOdrController::RetreatOrRest);
     InputComponent->BindKey(EKeys::U, IE_Pressed, this, &AOdrController::Upgrade);
@@ -168,7 +170,7 @@ void AOdrController::SearchOrCast() {
         if (Mode->Phase() == TEXT("creation"))
             Mode->CycleAncestry();
         else if (Mode->Phase() == TEXT("battle"))
-            Mode->ActOnNearest(true);
+            Mode->ActOnSelected(true);
     }
 }
 void AOdrController::BackgroundOrDefend() {
@@ -181,7 +183,15 @@ void AOdrController::BackgroundOrDefend() {
 }
 void AOdrController::Attack() {
     if (AOdrGameMode* Mode = GameMode(this))
-        Mode->ActOnNearest(false);
+        Mode->ActOnSelected(false);
+}
+void AOdrController::CycleTarget() {
+    if (AOdrGameMode* Mode = GameMode(this))
+        Mode->CycleTarget();
+}
+void AOdrController::CycleHealingTarget() {
+    if (AOdrGameMode* Mode = GameMode(this))
+        Mode->CycleHealingTarget();
 }
 void AOdrController::AreaSpell() {
     if (AOdrGameMode* Mode = GameMode(this))

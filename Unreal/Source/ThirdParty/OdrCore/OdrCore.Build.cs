@@ -10,6 +10,8 @@ public class OdrCore : ModuleRules
         PublicIncludePaths.Add(Path.Combine(Root, "core", "include"));
         string Library = Path.Combine(Root, "build", "ue-release", "libodr_core.dylib");
         PublicAdditionalLibraries.Add(Library);
-        RuntimeDependencies.Add("$(TargetOutputDir)/libodr_core.dylib", Library);
+        ExternalDependencies.Add(Library);
+        // Editor modules live in the project; TargetOutputDir points at the engine.
+        RuntimeDependencies.Add("$(BinaryOutputDir)/libodr_core.dylib", Library);
     }
 }

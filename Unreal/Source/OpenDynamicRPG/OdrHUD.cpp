@@ -22,8 +22,16 @@ void AOdrHUD::DrawHUD() {
         for (const FOdrSceneLabel& Label : Mode->Labels()) {
             FVector2D Screen;
             if (PlayerOwner->ProjectWorldLocationToScreen(Label.Position, Screen)) {
-                DrawText(Label.Text, Label.Color, Screen.X - 7.5f * Label.Text.Len(),
-                         Screen.Y - 12.0f, nullptr, 1.5f);
+                if (Label.Text == TEXT("RETREAT")) {
+                    Screen.Y += 18.0f;
+                } else if (Label.Text == TEXT("Party")) {
+                    Screen.Y -= 18.0f;
+                }
+                float TextWidth = 0.0f;
+                float TextHeight = 0.0f;
+                GetTextSize(Label.Text, TextWidth, TextHeight, nullptr, 1.1f);
+                DrawText(Label.Text, Label.Color, Screen.X - TextWidth * 0.5f,
+                         Screen.Y - TextHeight * 0.5f, nullptr, 1.1f);
             }
         }
     }

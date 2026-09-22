@@ -142,31 +142,25 @@ json combatant(const json& source, Hex position) {
             {"visual_id", source["visual_id"]}};
 }
 
-json enemy(const std::string& id, const std::string& name, Hex position, bool secret, bool boss) {
+json enemy(const std::string& id, const json& source) {
     return {{"id", id},
-            {"name", name},
+            {"name", required_string(source, "name")},
             {"team", "enemy"},
-            {"class", boss     ? "Mine Warden"
-                      : secret ? "Cave Stalker"
-                               : "Claimant"},
-            {"pos", tile(position)},
-            {"hp", boss     ? 32
-                   : secret ? 17
-                            : 14},
-            {"max_hp", boss     ? 32
-                       : secret ? 17
-                                : 14},
-            {"armor", boss ? 3 : 1},
-            {"evasion", 7},
-            {"accuracy", 3},
-            {"damage", boss ? 9 : 5},
-            {"range", secret ? 3 : 1},
-            {"speed", boss ? 8 : 6},
-            {"move_left", boss ? 3 : 4},
+            {"class", required_string(source, "class")},
+            {"pos", source.at("pos")},
+            {"hp", required_int(source, "hp")},
+            {"max_hp", required_int(source, "max_hp")},
+            {"armor", required_int(source, "armor")},
+            {"evasion", required_int(source, "evasion")},
+            {"accuracy", required_int(source, "accuracy")},
+            {"damage", required_int(source, "damage")},
+            {"range", required_int(source, "range")},
+            {"speed", required_int(source, "speed")},
+            {"move_left", required_int(source, "move_left")},
             {"acted", false},
             {"poison", 0},
             {"defending", false},
-            {"visual_id", boss ? "placeholder.boss" : "placeholder.enemy"}};
+            {"visual_id", required_string(source, "visual_id")}};
 }
 
 std::set<Hex> hex_set(const json& array) {
@@ -214,31 +208,35 @@ std::vector<Hex> deployment_hexes(const json& layout, Hex trigger, Hex entry,
 }
 
 void validate_enemy_spawns(const json& layout) {
-    const bool boss = layout["floors"].size() == 2;
-    const std::vector<std::pair<std::string, Hex>> spawns = {
-        {"main enemy 1", {13, -2}},
-        {"main enemy 2", {14, 2}},
-        {"main enemy 3", {15, 0}},
-        {"secret enemy", {12, 4}},
-    };
-    std::vector<std::pair<std::string, Hex>> all_spawns = spawns;
-    if (boss) {
-        all_spawns.push_back({"boss enemy", {16, 1}});
+    if (!layout.contains("enemy_positions") || !layout["enemy_positions"].is_object()) {
+        throw GameError("layout is missing enemy spawn bindings");
     }
     const auto& objects = layout["objects"];
-    std::set<Hex> occupied;
-    for (const auto& [name, position] : all_spawns) {
-        if (!walkable(layout, position)) {
-            throw GameError(name + " spawn is not walkable");
+    for (const char* encounter : {"main", "secret"}) {
+        if (!layout["enemy_positions"].contains(encounter) ||
+            !layout["enemy_positions"][encounter].is_array()) {
+            throw GameError(std::string("layout is missing ") + encounter + " spawn bindings");
         }
-        if (!occupied.insert(position).second) {
-            throw GameError(name + " spawn overlaps another enemy");
-        }
-        for (const auto& [object_name, object] : objects.items()) {
-            if (object.is_array() && object.size() == 2 && object[0].is_number_integer() &&
-                object[1].is_number_integer() && hex(object) == position) {
-                throw GameError(name +
-                                " spawn overlaps layout object: " + std::string(object_name));
+        std::set<Hex> occupied;
+        for (const auto& spawn : layout["enemy_positions"][encounter]) {
+            if (!spawn.is_object() || !spawn.contains("name") || !spawn["name"].is_string() ||
+                !spawn.contains("pos")) {
+                throw GameError("enemy spawn binding is malformed");
+            }
+            const std::string name = spawn["name"].get<std::string>();
+            const Hex position = hex(spawn["pos"]);
+            if (!walkable(layout, position)) {
+                throw GameError(name + " spawn is not walkable");
+            }
+            if (!occupied.insert(position).second) {
+                throw GameError(name + " spawn overlaps another enemy");
+            }
+            for (const auto& [object_name, object] : objects.items()) {
+                if (object.is_array() && object.size() == 2 && object[0].is_number_integer() &&
+                    object[1].is_number_integer() && hex(object) == position) {
+                    throw GameError(name +
+                                    " spawn overlaps layout object: " + std::string(object_name));
+                }
             }
         }
     }
@@ -303,6 +301,9 @@ bool line_of_sight(const json& layout, Hex start, Hex end) {
 }
 
 json make_layout(const json& definition, std::uint64_t seed, bool generated, bool boss) {
+    const json& terrain = definition["mine"]["terrain"];
+    json objects = definition["mine"];
+    objects.erase("terrain");
     json layout = {{"schema_version", 1},
                    {"seed", seed},
                    {"provider_version", "hex-rooms-v1"},
@@ -318,7 +319,18 @@ json make_layout(const json& definition, std::uint64_t seed, bool generated, boo
                    {"connections", json::array({json::array({"entry", "gallery"}),
                                                 json::array({"gallery", "main"}),
                                                 json::array({"gallery", "secret"})})},
-                   {"objects", definition["mine"]}};
+                   {"objects", std::move(objects)},
+                   {"enemy_positions", {{"main", json::array()}, {"secret", json::array()}}}};
+    for (const auto& spec : definition["encounters"]["main"]) {
+        if (!spec.value("boss", false) || boss) {
+            layout["enemy_positions"]["main"].push_back(
+                {{"name", required_string(spec, "suffix")}, {"pos", spec.at("pos")}});
+        }
+    }
+    for (const auto& spec : definition["encounters"]["secret"]) {
+        layout["enemy_positions"]["secret"].push_back(
+            {{"name", required_string(spec, "suffix")}, {"pos", spec.at("pos")}});
+    }
     layout["floors"] =
         boss ? json::array({{{"id", "upper"}, {"depth", 1}}, {{"id", "lower"}, {"depth", 2}}})
              : json::array({{{"id", "mine"}, {"depth", 1}}});
@@ -330,25 +342,61 @@ json make_layout(const json& definition, std::uint64_t seed, bool generated, boo
                          json::array({"stairs", "main"}), json::array({"gallery", "secret"})});
         layout["rooms"].push_back({{"id", "stairs"}, {"role", "floor_transition"}});
     }
-    for (int q = 0; q <= 17; ++q) {
-        for (int r = -6; r <= 6; ++r) {
+    for (int q = required_int(terrain, "q_min"); q <= required_int(terrain, "q_max"); ++q) {
+        for (int r = required_int(terrain, "r_min"); r <= required_int(terrain, "r_max"); ++r) {
             layout["tiles"].push_back(tile({q, r}));
         }
     }
-    layout["walls"] = json::array({tile({8, 0}), tile({10, 0}), tile({11, -2})});
-    layout["rough"] = json::array({tile({5, -2}), tile({6, -2}), tile({12, 3})});
+    layout["walls"] = terrain.at("walls");
+    layout["rough"] = terrain.at("rough");
     if (generated) {
-        static const std::vector<Hex> options{{4, -3}, {6, 2}, {11, 4}, {13, -4}, {15, 3}};
-        layout["walls"].push_back(tile(options[seed % options.size()]));
-        layout["rough"].push_back(tile(options[(seed / options.size()) % options.size()]));
+        const auto& walls = terrain.at("generated_wall_options");
+        const auto& rough = terrain.at("generated_rough_options");
+        layout["walls"].push_back(walls[seed % walls.size()]);
+        layout["rough"].push_back(rough[(seed / walls.size()) % rough.size()]);
     }
     return layout;
+}
+
+void validate_encounter_bindings(const json& layout, const json& definition, bool boss) {
+    if (!layout.contains("enemy_positions") || !layout["enemy_positions"].is_object()) {
+        throw GameError("layout is missing enemy spawn bindings");
+    }
+    for (const char* encounter : {"main", "secret"}) {
+        if (!layout["enemy_positions"].contains(encounter) ||
+            !layout["enemy_positions"][encounter].is_array()) {
+            throw GameError(std::string("layout is missing ") + encounter + " spawn bindings");
+        }
+        std::set<std::string> expected;
+        for (const auto& spec : definition["encounters"][encounter]) {
+            if (std::string(encounter) == "main" && spec.value("boss", false) && !boss) {
+                continue;
+            }
+            expected.insert(required_string(spec, "suffix"));
+        }
+        std::set<std::string> actual;
+        for (const auto& spawn : layout["enemy_positions"][encounter]) {
+            if (!spawn.is_object() || !spawn.contains("name") || !spawn["name"].is_string() ||
+                !spawn.contains("pos")) {
+                throw GameError(std::string(encounter) + " enemy spawn binding is malformed");
+            }
+            hex(spawn["pos"]);
+            if (!actual.insert(spawn["name"].get<std::string>()).second ||
+                !expected.contains(spawn["name"].get<std::string>())) {
+                throw GameError(std::string(encounter) + " enemy spawn identity is invalid");
+            }
+        }
+        if (actual != expected) {
+            throw GameError(std::string(encounter) + " enemy spawn set is incomplete");
+        }
+    }
 }
 
 void validate_layout(const json& layout, int party_size) {
     if (!layout.is_object() || !layout.contains("tiles") || !layout.contains("walls") ||
         !layout.contains("rough") || !layout.contains("objects") || !layout.contains("rooms") ||
-        !layout.contains("connections") || !layout.contains("floors")) {
+        !layout.contains("connections") || !layout.contains("floors") ||
+        !layout.contains("enemy_positions")) {
         throw GameError("layout is missing required geometry or bindings");
     }
     if (party_size < 1 || party_size > 12) {
@@ -380,9 +428,10 @@ void validate_layout(const json& layout, int party_size) {
     for (const char* name : {"main_trigger", "secret_trigger"}) {
         const Hex trigger = hex(objects.at(name));
         bool legal_approach = false;
-        std::set<Hex> enemy_positions = {{13, -2}, {14, 2}, {15, 0}, {12, 4}};
-        if (layout["floors"].size() == 2) {
-            enemy_positions.insert({16, 1});
+        std::set<Hex> enemy_positions;
+        const char* encounter = std::string(name) == "main_trigger" ? "main" : "secret";
+        for (const auto& spawn : layout["enemy_positions"][encounter]) {
+            enemy_positions.insert(hex(spawn["pos"]));
         }
         for (const Hex& entry_hex : neighbors(trigger)) {
             if (!reachable.contains(entry_hex)) {
@@ -440,6 +489,93 @@ void validate_layout(const json& layout, int party_size) {
     }
 }
 
+void validate_content_definition(const json& definition) {
+    if (!definition.contains("mine") || !definition["mine"].is_object()) {
+        throw GameError("content is missing mine bindings");
+    }
+    for (const char* key :
+         {"entry", "clue", "hidden_loot", "main_trigger", "ore", "secret_trigger", "exit"}) {
+        if (!definition["mine"].contains(key)) {
+            throw GameError(std::string("content is missing objective binding: ") + key);
+        }
+        hex(definition["mine"][key]);
+    }
+    if (!definition.contains("recruits") || !definition["recruits"].is_array()) {
+        throw GameError("content recruits must be an array");
+    }
+    std::set<std::string> recruit_ids;
+    for (const auto& recruit : definition["recruits"]) {
+        for (const char* key : {"id", "name", "class"}) {
+            required_string(recruit, key);
+        }
+        if (!recruit_ids.insert(recruit["id"].get<std::string>()).second ||
+            !member_of(recruit["class"].get<std::string>(),
+                       {"Warrior", "Rogue", "Ranger", "Mage", "Cleric", "Barbarian"})) {
+            throw GameError("content recruit identity or class is invalid");
+        }
+    }
+    const auto& terrain = definition.at("mine").at("terrain");
+    for (const char* key : {"q_min", "q_max", "r_min", "r_max"}) {
+        (void)required_int(terrain, key);
+    }
+    if (terrain["q_min"].get<int>() > terrain["q_max"].get<int>() ||
+        terrain["r_min"].get<int>() > terrain["r_max"].get<int>()) {
+        throw GameError("content terrain bounds are invalid");
+    }
+    for (const char* key :
+         {"walls", "rough", "generated_wall_options", "generated_rough_options"}) {
+        if (!terrain.contains(key) || !terrain[key].is_array() ||
+            (std::string(key).starts_with("generated_") && terrain[key].empty())) {
+            throw GameError(std::string("content terrain binding is invalid: ") + key);
+        }
+        for (const auto& point : terrain[key]) {
+            hex(point);
+        }
+    }
+    for (const char* key : {"participant", "location", "reward"}) {
+        required_string(definition.at("defaults"), key);
+    }
+    for (const char* key : {"cache_gold", "ore_quantity", "main_xp", "secret_xp", "secret_gold"}) {
+        if (required_int(definition.at("defaults"), key) <= 0) {
+            throw GameError(std::string("content default quantity is invalid: ") + key);
+        }
+    }
+    std::set<std::string> suffixes;
+    for (const char* encounter : {"main", "secret"}) {
+        const auto& records = definition.at("encounters").at(encounter);
+        if (!records.is_array() || records.empty()) {
+            throw GameError(std::string("content encounter list is empty: ") + encounter);
+        }
+        int bosses = 0;
+        for (const auto& record : records) {
+            for (const char* key : {"suffix", "name", "class", "visual_id"}) {
+                required_string(record, key);
+            }
+            const std::string suffix = record["suffix"].get<std::string>();
+            if (!suffixes.insert(suffix).second || suffix.empty()) {
+                throw GameError("content encounter IDs are not unique");
+            }
+            hex(record.at("pos"));
+            for (const char* key : {"hp", "max_hp", "armor", "evasion", "accuracy", "damage",
+                                    "range", "speed", "move_left"}) {
+                if (required_int(record, key) < 0) {
+                    throw GameError(std::string("content enemy stat is invalid: ") + key);
+                }
+            }
+            if (record["hp"].get<int>() <= 0 ||
+                record["max_hp"].get<int>() < record["hp"].get<int>() ||
+                record["range"].get<int>() <= 0 || record["speed"].get<int>() <= 0) {
+                throw GameError("content enemy combat stats are invalid");
+            }
+            if (record.value("boss", false)) {
+                if (std::string(encounter) != "main" || ++bosses > 1) {
+                    throw GameError("content boss encounter binding is invalid");
+                }
+            }
+        }
+    }
+}
+
 void require_save_object(const json& value, const char* key, const char* context) {
     if (!value.contains(key) || !value[key].is_object()) {
         throw GameError(std::string("save is missing object: ") + context + "." + key);
@@ -464,7 +600,46 @@ void require_save_bool(const json& value, const char* key, const char* context) 
     }
 }
 
-void validate_saved_battle(const json& battle, const std::set<std::string>& active_party) {
+void validate_enemy_record(const json& enemy_record, const std::string& run_id,
+                           const char* context) {
+    if (!enemy_record.is_object()) {
+        throw GameError(std::string("save ") + context + " is not an object");
+    }
+    for (const char* key : {"id", "name", "team", "class", "visual_id"}) {
+        require_save_string(enemy_record, key, context);
+    }
+    if (enemy_record["team"] != "enemy") {
+        throw GameError(std::string("save ") + context + " team is invalid");
+    }
+    const std::string id = enemy_record["id"].get<std::string>();
+    if (id.rfind(run_id + "-", 0) != 0) {
+        throw GameError(std::string("save ") + context + " identity is not bound to its run");
+    }
+    if (!enemy_record.contains("pos") || !enemy_record["pos"].is_array()) {
+        throw GameError(std::string("save ") + context + " is missing position");
+    }
+    hex(enemy_record["pos"]);
+    for (const char* key : {"hp", "max_hp", "armor", "evasion", "accuracy", "damage", "range",
+                            "speed", "move_left", "poison"}) {
+        require_save_integer(enemy_record, key, context);
+    }
+    for (const char* key : {"acted", "defending"}) {
+        require_save_bool(enemy_record, key, context);
+    }
+    const int hp = enemy_record["hp"].get<int>();
+    const int max_hp = enemy_record["max_hp"].get<int>();
+    if (max_hp <= 0 || hp < 0 || hp > max_hp || enemy_record["armor"].get<int>() < 0 ||
+        enemy_record["evasion"].get<int>() < 0 || enemy_record["accuracy"].get<int>() < 0 ||
+        enemy_record["damage"].get<int>() < 0 || enemy_record["range"].get<int>() <= 0 ||
+        enemy_record["speed"].get<int>() <= 0 || enemy_record["move_left"].get<int>() < 0 ||
+        enemy_record["poison"].get<int>() < 0) {
+        throw GameError(std::string("save ") + context + " has an invalid combat range");
+    }
+}
+
+void validate_saved_battle(const json& battle, const json& run,
+                           const std::set<std::string>& active_party,
+                           const std::map<std::string, json>& party_by_id, int mine_floor) {
     if (!battle.is_object()) {
         throw GameError("save battle state must be an object");
     }
@@ -480,11 +655,74 @@ void validate_saved_battle(const json& battle, const std::set<std::string>& acti
     hex(battle["trigger"]);
     require_save_integer(battle, "round", "battle");
     require_save_integer(battle, "turn_index", "battle");
+    if (battle["round"].get<int>() < 1) {
+        throw GameError("save battle round is invalid");
+    }
     if (!battle.contains("actors") || !battle["actors"].is_array() || !battle.contains("order") ||
         !battle["order"].is_array() || battle["order"].empty()) {
         throw GameError("save battle is missing actors or order");
     }
+    const bool secret = battle["kind"] == "secret";
+    const char* trigger_name = secret ? "secret_trigger" : "main_trigger";
+    require_save_string(run, "id", "run");
+    require_save_string(run, "template_id", "run");
+    require_save_object(run, "layout", "run");
+    require_save_object(run["layout"], "objects", "run layout");
+    for (const char* key : {"tiles", "walls"}) {
+        if (!run["layout"].contains(key) || !run["layout"][key].is_array()) {
+            throw GameError(std::string("save run layout is missing array: ") + key);
+        }
+    }
+    require_save_object(run, "changes", "run");
+    for (const char* key : {"secret_found", "secret_won", "main_won"}) {
+        require_save_bool(run["changes"], key, "run changes");
+    }
+    if (!run["layout"]["objects"].contains(trigger_name) ||
+        battle["trigger"] != run["layout"]["objects"][trigger_name]) {
+        throw GameError("save battle trigger does not match its encounter");
+    }
+    if (distance(hex(battle["approach"]), hex(battle["trigger"])) != 1 ||
+        !walkable(run["layout"], hex(battle["approach"]))) {
+        throw GameError("save battle approach is not a walkable adjacent entry");
+    }
+    const auto& changes = run["changes"];
+    if (secret ? (!changes["secret_found"].get<bool>() || changes["secret_won"].get<bool>())
+               : changes["main_won"].get<bool>()) {
+        throw GameError("save battle is inconsistent with completed run changes");
+    }
+    require_save_bool(run, "boss", "run");
+    const int expected_floor = secret ? 1 : (run["boss"].get<bool>() ? 2 : 1);
+    if (mine_floor != expected_floor) {
+        throw GameError("save battle floor does not match its encounter");
+    }
+    const char* enemy_field = secret ? "secret_enemies" : "main_enemies";
+    if (!run.contains(enemy_field) || !run[enemy_field].is_array()) {
+        throw GameError(std::string("save run is missing enemy array: ") + enemy_field);
+    }
+    std::map<std::string, json> enemy_by_id;
+    for (const auto& enemy_record : run[enemy_field]) {
+        validate_enemy_record(enemy_record, run["id"].get<std::string>(), enemy_field);
+        enemy_by_id.emplace(enemy_record["id"].get<std::string>(), enemy_record);
+    }
+    std::set<std::string> expected_enemies;
+    for (const auto& [id, enemy_record] : enemy_by_id) {
+        if (enemy_record["hp"].get<int>() > 0) {
+            expected_enemies.insert(id);
+        }
+    }
     std::set<std::string> actor_ids;
+    std::set<std::string> battle_enemies;
+    std::set<std::string> expected_party;
+    for (const auto& id_value : active_party) {
+        const auto& member = party_by_id.at(id_value);
+        if (member["hp"].get<int>() > 0) {
+            expected_party.insert(id_value);
+        }
+    }
+    std::set<std::string> battle_party;
+    std::set<Hex> positions;
+    bool living_party = false;
+    bool living_enemy = false;
     for (const auto& actor : battle["actors"]) {
         if (!actor.is_object()) {
             throw GameError("save battle actor is not an object");
@@ -499,6 +737,12 @@ void validate_saved_battle(const json& battle, const std::set<std::string>& acti
             throw GameError("save battle actor is missing position");
         }
         hex(actor["pos"]);
+        if (!walkable(run["layout"], hex(actor["pos"]))) {
+            throw GameError("save battle actor is outside the walkable layout");
+        }
+        if (actor["hp"].get<int>() > 0 && !positions.insert(hex(actor["pos"])).second) {
+            throw GameError("save battle actors overlap");
+        }
         for (const char* key : {"hp", "max_hp", "armor", "evasion", "accuracy", "damage", "range",
                                 "speed", "move_left", "poison"}) {
             require_save_integer(actor, key, "battle actor");
@@ -510,12 +754,51 @@ void validate_saved_battle(const json& battle, const std::set<std::string>& acti
             require_save_bool(actor, key, "battle actor");
         }
         const std::string id = actor["id"].get<std::string>();
-        if (actor["team"] == "party" && !active_party.contains(id)) {
-            throw GameError("save battle party actor is not active");
+        const int hp = actor["hp"].get<int>();
+        const int max_hp = actor["max_hp"].get<int>();
+        if (max_hp <= 0 || hp < 0 || hp > max_hp || actor["armor"].get<int>() < 0 ||
+            actor["evasion"].get<int>() < 0 || actor["accuracy"].get<int>() < 0 ||
+            actor["damage"].get<int>() < 0 || actor["range"].get<int>() <= 0 ||
+            actor["speed"].get<int>() <= 0 || actor["move_left"].get<int>() < 0 ||
+            actor["move_left"].get<int>() > 4 || actor["poison"].get<int>() < 0) {
+            throw GameError("save battle actor has an invalid combat range");
+        }
+        if (actor["team"] == "party") {
+            if (!active_party.contains(id) || !party_by_id.contains(id) ||
+                !battle_party.insert(id).second) {
+                throw GameError("save battle party actor is not active");
+            }
+            const auto& member = party_by_id.at(id);
+            for (const char* key : {"name", "class", "visual_id"}) {
+                if (actor[key] != member[key]) {
+                    throw GameError("save battle party identity does not match party state");
+                }
+            }
+            if (actor["spell_uses"].get<int>() < 0) {
+                throw GameError("save battle spell uses are invalid");
+            }
+            living_party = living_party || hp > 0;
+        } else {
+            if (!enemy_by_id.contains(id) || !battle_enemies.insert(id).second) {
+                throw GameError("save battle enemy identity is invalid");
+            }
+            const auto& persisted = enemy_by_id.at(id);
+            for (const char* key : {"name", "class", "visual_id"}) {
+                if (actor[key] != persisted[key]) {
+                    throw GameError("save battle enemy identity does not match run state");
+                }
+            }
+            living_enemy = living_enemy || hp > 0;
         }
         if (!actor_ids.insert(id).second) {
             throw GameError("save battle actor IDs are not unique");
         }
+    }
+    if (battle_enemies != expected_enemies) {
+        throw GameError("save battle enemy membership does not match run state");
+    }
+    if (battle_party != expected_party || !living_party || !living_enemy) {
+        throw GameError("save battle party membership or living actors are inconsistent");
     }
     if (battle["turn_index"].get<int>() < 0 ||
         battle["turn_index"].get<std::size_t>() >= battle["order"].size()) {
@@ -547,6 +830,9 @@ void validate_saved_state(const json& loaded) {
             throw GameError(std::string("save is missing array: state.") + key);
         }
     }
+    if (!loaded.contains("runs") || !loaded["runs"].is_object()) {
+        throw GameError("save is missing object: state.runs");
+    }
     std::set<std::string> party_ids;
     for (const auto& member : loaded["party"]) {
         if (!member.is_object()) {
@@ -565,6 +851,10 @@ void validate_saved_state(const json& loaded) {
         }
     }
     std::set<std::string> active_ids;
+    std::map<std::string, json> party_by_id;
+    for (const auto& member : loaded["party"]) {
+        party_by_id.emplace(member["id"].get<std::string>(), member);
+    }
     for (const auto& id : loaded["active_party"]) {
         if (!id.is_string() || !active_ids.insert(id.get<std::string>()).second ||
             !party_ids.contains(id.get<std::string>())) {
@@ -610,9 +900,123 @@ void validate_saved_state(const json& loaded) {
         throw GameError("save active run is required during dungeon or battle");
     }
     if (phase == "battle") {
-        validate_saved_battle(loaded["battle"], active_ids);
+        const std::string active_run = loaded["active_run"].get<std::string>();
+        validate_saved_battle(loaded["battle"], loaded["runs"].at(active_run), active_ids,
+                              party_by_id, loaded["mine_floor"].get<int>());
     } else if (!loaded["battle"].is_null()) {
         throw GameError("save battle state is inconsistent with phase");
+    }
+}
+
+void validate_saved_run(const json& run, const std::string& id, const std::string& template_id) {
+    if (!run.is_object()) {
+        throw GameError("saved adventure run is not an object");
+    }
+    for (const char* key :
+         {"id", "template_id", "mode", "layout_source", "participant", "location", "reward"}) {
+        require_save_string(run, key, "run");
+    }
+    require_save_integer(run, "content_schema_version", "run");
+    if (run["content_schema_version"].get<int>() != 2) {
+        throw GameError("saved run content schema is unsupported");
+    }
+    require_save_object(run, "rewards", "run");
+    for (const char* key : {"cache_gold", "ore_quantity", "main_xp", "secret_xp", "secret_gold"}) {
+        require_save_integer(run["rewards"], key, "run rewards");
+        if (run["rewards"][key].get<int>() <= 0) {
+            throw GameError("save run reward quantity is invalid");
+        }
+    }
+    require_save_object(run, "bindings", "run");
+    require_save_object(run["bindings"], "objects", "run bindings");
+    for (const char* key : {"main_enemy_ids", "secret_enemy_ids"}) {
+        if (!run["bindings"].contains(key) || !run["bindings"][key].is_array()) {
+            throw GameError(std::string("save run bindings is missing array: ") + key);
+        }
+    }
+    if (run["id"] != id || run["template_id"] != template_id ||
+        !member_of(run["mode"].get<std::string>(), {"authored", "generated"}) ||
+        !member_of(run["layout_source"].get<std::string>(),
+                   {"authored", "generated", "authored_fallback"})) {
+        throw GameError("saved adventure identity or mode is inconsistent");
+    }
+    require_save_bool(run, "boss", "run");
+    if (!run.contains("generation_diagnostics") || !run["generation_diagnostics"].is_array()) {
+        throw GameError("save run generation diagnostics must be an array");
+    }
+    require_save_object(run, "layout", "run");
+    require_save_object(run, "changes", "run");
+    for (const char* key :
+         {"hidden_loot_taken", "secret_found", "secret_won", "main_won", "ore_taken", "upgraded"}) {
+        require_save_bool(run["changes"], key, "run changes");
+    }
+    const auto& changes = run["changes"];
+    if (changes["secret_won"].get<bool>() && !changes["secret_found"].get<bool>()) {
+        throw GameError("save run secret progress is inconsistent");
+    }
+    if (changes["ore_taken"].get<bool>() && !changes["main_won"].get<bool>()) {
+        throw GameError("save run ore progress is inconsistent");
+    }
+    if (changes["upgraded"].get<bool>() && !changes["ore_taken"].get<bool>()) {
+        throw GameError("save run upgrade progress is inconsistent");
+    }
+    for (const char* key : {"main_enemies", "secret_enemies"}) {
+        if (!run.contains(key) || !run[key].is_array() || run[key].empty()) {
+            throw GameError(std::string("save run is missing enemy array: ") + key);
+        }
+        std::set<std::string> enemy_ids;
+        for (const auto& enemy_record : run[key]) {
+            validate_enemy_record(enemy_record, id, key);
+            if (!enemy_ids.insert(enemy_record["id"].get<std::string>()).second) {
+                throw GameError(std::string("save run ") + key + " IDs are not unique");
+            }
+        }
+    }
+    const auto binding_ids = [](const json& records) {
+        json ids = json::array();
+        for (const auto& record : records) {
+            ids.push_back(record["id"]);
+        }
+        return ids;
+    };
+    if (run["bindings"]["objects"] != run["layout"]["objects"] ||
+        run["bindings"]["main_enemy_ids"] != binding_ids(run["main_enemies"]) ||
+        run["bindings"]["secret_enemy_ids"] != binding_ids(run["secret_enemies"])) {
+        throw GameError("save run bindings do not match resolved content");
+    }
+    std::set<std::string> all_enemy_ids;
+    for (const char* key : {"main_enemies", "secret_enemies"}) {
+        for (const auto& enemy_record : run[key]) {
+            if (!all_enemy_ids.insert(enemy_record["id"].get<std::string>()).second) {
+                throw GameError("save run enemy IDs are not unique across encounters");
+            }
+        }
+        const bool won =
+            key[0] == 'm' ? changes["main_won"].get<bool>() : changes["secret_won"].get<bool>();
+        bool living = false;
+        for (const auto& enemy_record : run[key]) {
+            living = living || enemy_record["hp"].get<int>() > 0;
+        }
+        if (won && living) {
+            throw GameError(std::string("save run ") + key + " remains unresolved");
+        }
+        if (!won && !living) {
+            throw GameError(std::string("save run ") + key + " is complete without progress");
+        }
+    }
+    validate_layout(run["layout"], 12);
+    for (const char* key : {"main_enemies", "secret_enemies"}) {
+        std::set<Hex> enemy_positions;
+        for (const auto& enemy_record : run[key]) {
+            const Hex position = hex(enemy_record["pos"]);
+            if (!walkable(run["layout"], position) ||
+                (enemy_record["hp"].get<int>() > 0 && !enemy_positions.insert(position).second)) {
+                throw GameError("save run enemy placement is invalid");
+            }
+        }
+    }
+    if (run["boss"].get<bool>() != (run["layout"]["floors"].size() == 2)) {
+        throw GameError("saved floor identity is inconsistent");
     }
 }
 
@@ -625,12 +1029,14 @@ struct OdrSession {
     std::string error;
 
     explicit OdrSession(json source) : definition(std::move(source)) {
-        if (definition.value("schema_version", 0) != 1 || !definition.contains("mine") ||
-            !definition.contains("recruits")) {
+        if (definition.value("schema_version", 0) != 2 || !definition.contains("mine") ||
+            !definition.contains("recruits") || !definition.contains("defaults") ||
+            !definition.contains("encounters")) {
             throw GameError("unsupported or incomplete adventure definition");
         }
+        validate_content_definition(definition);
         const std::string template_id = required_string(definition, "template_id");
-        state = {{"schema_version", 1},
+        state = {{"schema_version", 2},
                  {"template_id", template_id},
                  {"phase", "creation"},
                  {"next_id", 1},
@@ -717,6 +1123,7 @@ struct OdrSession {
                                       boss)
                         : candidates[static_cast<std::size_t>(attempt) % candidates.size()];
                 try {
+                    validate_encounter_bindings(candidate, definition, boss);
                     validate_layout(candidate, 12);
                     if ((candidate["floors"].size() == 2) != boss) {
                         throw GameError("candidate floor count does not match boss variant");
@@ -729,42 +1136,90 @@ struct OdrSession {
             }
             if (layout.is_null()) {
                 layout = make_layout(definition, seed, false, boss);
+                validate_encounter_bindings(layout, definition, boss);
                 validate_layout(layout, 12);
                 source = "authored_fallback";
             }
         } else {
             layout = make_layout(definition, seed, false, boss);
+            validate_encounter_bindings(layout, definition, boss);
             validate_layout(layout, 12);
         }
         const std::string id = next_id(state, "run");
-        json adventure = {
-            {"id", id},
-            {"template_id", state["template_id"]},
-            {"mode", mode},
-            {"boss", boss},
-            {"layout_source", source},
-            {"generation_diagnostics", diagnostics},
-            {"participant", command.value("participant", "mine claimants")},
-            {"location", command.value("location", "old mine")},
-            {"reward", command.value("reward", "star iron")},
-            {"layout", std::move(layout)},
-            {"changes",
-             {{"hidden_loot_taken", false},
-              {"secret_found", false},
-              {"secret_won", false},
-              {"main_won", false},
-              {"ore_taken", false},
-              {"upgraded", false}}},
-            {"main_enemies",
-             json::array({enemy(id + "-guard-1", "Mine Guard", {13, -2}, false, false),
-                          enemy(id + "-guard-2", "Mine Guard", {14, 2}, false, false),
-                          enemy(id + "-guard-3", "Mine Archer", {15, 0}, true, false)})},
-            {"secret_enemies",
-             json::array({enemy(id + "-stalker", "Cave Stalker", {12, 4}, true, false)})}};
-        if (boss) {
-            adventure["main_enemies"].push_back(
-                enemy(id + "-warden", "Mine Warden", {16, 1}, false, true));
+        const json& defaults = definition["defaults"];
+        const auto run_string = [&command](const char* key, const std::string& fallback) {
+            if (!command.contains(key)) {
+                return fallback;
+            }
+            const std::string value = required_string(command, key);
+            if (value.empty()) {
+                throw GameError(std::string("run ") + key + " must not be empty");
+            }
+            return value;
+        };
+        const std::string participant =
+            run_string("participant", required_string(defaults, "participant"));
+        const std::string location = run_string("location", required_string(defaults, "location"));
+        const std::string reward = run_string("reward", required_string(defaults, "reward"));
+        const json& encounter_defs = definition["encounters"];
+        auto build_enemies = [&id, &layout](const json& specs, bool include_boss,
+                                            const char* encounter) {
+            json result = json::array();
+            for (const auto& spec : specs) {
+                if (include_boss || !spec.value("boss", false)) {
+                    json resolved = spec;
+                    const std::string suffix = required_string(spec, "suffix");
+                    for (const auto& spawn : layout["enemy_positions"][encounter]) {
+                        if (spawn["name"] == suffix) {
+                            resolved["pos"] = spawn["pos"];
+                            break;
+                        }
+                    }
+                    result.push_back(enemy(id + "-" + suffix, resolved));
+                }
+            }
+            return result;
+        };
+        json main_enemies = build_enemies(encounter_defs.at("main"), boss, "main");
+        json secret_enemies = build_enemies(encounter_defs.at("secret"), true, "secret");
+        json main_enemy_ids = json::array();
+        for (const auto& record : main_enemies) {
+            main_enemy_ids.push_back(record["id"]);
         }
+        json secret_enemy_ids = json::array();
+        for (const auto& record : secret_enemies) {
+            secret_enemy_ids.push_back(record["id"]);
+        }
+        json adventure = {{"id", id},
+                          {"template_id", state["template_id"]},
+                          {"content_schema_version", definition["schema_version"]},
+                          {"mode", mode},
+                          {"boss", boss},
+                          {"layout_source", source},
+                          {"generation_diagnostics", diagnostics},
+                          {"participant", participant},
+                          {"location", location},
+                          {"reward", reward},
+                          {"rewards",
+                           {{"cache_gold", defaults.at("cache_gold")},
+                            {"ore_quantity", defaults.at("ore_quantity")},
+                            {"main_xp", defaults.at("main_xp")},
+                            {"secret_xp", defaults.at("secret_xp")},
+                            {"secret_gold", defaults.at("secret_gold")}}},
+                          {"bindings",
+                           {{"objects", layout["objects"]},
+                            {"main_enemy_ids", main_enemy_ids},
+                            {"secret_enemy_ids", secret_enemy_ids}}},
+                          {"layout", std::move(layout)},
+                          {"changes",
+                           {{"hidden_loot_taken", false},
+                            {"secret_found", false},
+                            {"secret_won", false},
+                            {"main_won", false},
+                            {"ore_taken", false},
+                            {"upgraded", false}}},
+                          {"main_enemies", std::move(main_enemies)},
+                          {"secret_enemies", std::move(secret_enemies)}};
         state["runs"][id] = std::move(adventure);
         state["active_run"] = id;
         if (source == "authored_fallback") {
@@ -974,8 +1429,9 @@ void OdrSession::apply(const json& command) {
             throw GameError("hidden cache is unavailable");
         }
         adventure["changes"]["hidden_loot_taken"] = true;
-        state["inventory"]["gold"] = state["inventory"]["gold"].get<int>() + 15;
-        event("loot", "found an unguarded cache of fifteen gold");
+        const int gold = adventure["rewards"]["cache_gold"].get<int>();
+        state["inventory"]["gold"] = state["inventory"]["gold"].get<int>() + gold;
+        event("loot", "found an unguarded cache of " + std::to_string(gold) + " gold");
     } else if (action == "begin_main" || action == "begin_secret") {
         require_phase("dungeon");
         begin_battle(action == "begin_secret");
@@ -991,8 +1447,10 @@ void OdrSession::apply(const json& command) {
             throw GameError("the guarded ore is not available");
         }
         adventure["changes"]["ore_taken"] = true;
-        state["inventory"]["ore"] = state["inventory"]["ore"].get<int>() + 1;
-        event("ore_recovered", "star iron recovered for the blacksmith");
+        const int quantity = adventure["rewards"]["ore_quantity"].get<int>();
+        state["inventory"]["ore"] = state["inventory"]["ore"].get<int>() + quantity;
+        event("ore_recovered",
+              adventure["reward"].get<std::string>() + " recovered for the blacksmith");
     } else if (action == "upgrade") {
         require_phase("city");
         json& adventure = run();
@@ -1191,7 +1649,8 @@ void OdrSession::finish_battle(bool won) {
     if (won) {
         adventure["changes"][secret ? "secret_won" : "main_won"] = true;
         for (auto& member : state["party"]) {
-            member["xp"] = member["xp"].get<int>() + (secret ? 60 : 120);
+            member["xp"] = member["xp"].get<int>() +
+                           adventure["rewards"][secret ? "secret_xp" : "main_xp"].get<int>();
             if (member["hp"].get<int>() == 0 &&
                 std::find(state["active_party"].begin(), state["active_party"].end(),
                           member["id"]) != state["active_party"].end()) {
@@ -1200,7 +1659,8 @@ void OdrSession::finish_battle(bool won) {
             }
         }
         if (secret) {
-            state["inventory"]["gold"] = state["inventory"]["gold"].get<int>() + 20;
+            state["inventory"]["gold"] = state["inventory"]["gold"].get<int>() +
+                                         adventure["rewards"]["secret_gold"].get<int>();
         }
         state["phase"] = "dungeon";
         event("battle_won", secret ? "secret reward claimed" : "the ore route is safe");
@@ -1501,7 +1961,7 @@ extern "C" int odr_load(OdrSession* session, const char* save_json) {
     }
     try {
         json loaded = parse_object(save_json);
-        if (loaded.value("schema_version", 0) != 1 ||
+        if (loaded.value("schema_version", 0) != 2 ||
             loaded.value("template_id", "") !=
                 session->definition["template_id"].get<std::string>() ||
             !loaded.contains("runs") || !loaded.contains("party") ||
@@ -1520,14 +1980,7 @@ extern "C" int odr_load(OdrSession* session, const char* save_json) {
             throw GameError("saved active run is missing");
         }
         for (const auto& [id, run] : loaded["runs"].items()) {
-            if (run.value("id", "") != id ||
-                run.value("template_id", "") != loaded["template_id"].get<std::string>()) {
-                throw GameError("saved adventure identity is inconsistent");
-            }
-            validate_layout(run.at("layout"), 12);
-            if (run.value("boss", false) != (run["layout"]["floors"].size() == 2)) {
-                throw GameError("saved floor identity is inconsistent");
-            }
+            validate_saved_run(run, id, loaded["template_id"].get<std::string>());
         }
         session->state = std::move(loaded);
         session->error.clear();

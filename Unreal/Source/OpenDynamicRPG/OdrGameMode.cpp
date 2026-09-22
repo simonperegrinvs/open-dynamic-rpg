@@ -77,6 +77,12 @@ FIntPoint PositionField(const TSharedPtr<FJsonObject>& Object, const FString& Na
                : FIntPoint::ZeroValue;
 }
 
+int32 HexDistance(const FIntPoint& A, const FIntPoint& B) {
+    const int32 DQ = A.X - B.X;
+    const int32 DR = A.Y - B.Y;
+    return (FMath::Abs(DQ) + FMath::Abs(DR) + FMath::Abs(DQ + DR)) / 2;
+}
+
 FString DataPath(const FString& File) {
     return FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data"), File);
 }
@@ -187,9 +193,9 @@ bool AOdrGameMode::Command(const FString& JsonCommand) {
     const bool bSuccess = odr_apply(Session, TCHAR_TO_UTF8(*JsonCommand)) != 0;
     LastMessage = bSuccess ? TEXT("") : UTF8_TO_TCHAR(odr_error(Session));
     if (!bSuccess) {
-        UE_LOG(LogTemp, Warning, TEXT("ODR command rejected: %s (%s)"), *JsonCommand,
-               *LastMessage);
+        UE_LOG(LogTemp, Warning, TEXT("ODR command rejected: %s (%s)"), *JsonCommand, *LastMessage);
     } else {
+        SelectedTarget.Empty();
         const auto State = Snapshot();
         const TArray<TSharedPtr<FJsonValue>>* Events = nullptr;
         if (State.IsValid() && State->TryGetArrayField(TEXT("events"), Events) &&
@@ -305,16 +311,42 @@ void AOdrGameMode::LevelHero() {
     }
 }
 
-void AOdrGameMode::ActOnNearest(bool bCast, bool bArea) {
+FString AOdrGameMode::CurrentActorId(const TSharedPtr<FJsonObject>& State) const {
+    const auto Battle = ObjectField(State, TEXT("battle"));
+    const TArray<TSharedPtr<FJsonValue>>* Order = nullptr;
+    if (!Battle.IsValid() || !Battle->TryGetArrayField(TEXT("order"), Order) || Order == nullptr) {
+        return FString();
+    }
+    return ArrayString(*Order, NumberField(Battle, TEXT("turn_index")));
+}
+
+bool AOdrGameMode::IsUsableTarget(const TSharedPtr<FJsonObject>& Acting,
+                                  const TSharedPtr<FJsonObject>& Candidate, bool bCast,
+                                  bool bArea) const {
+    if (!Acting.IsValid() || !Candidate.IsValid() || NumberField(Candidate, TEXT("hp")) <= 0) {
+        return false;
+    }
+    if (bArea) {
+        return StringField(Candidate, TEXT("team")) == TEXT("enemy");
+    }
+    const bool bHealing = bCast && StringField(Acting, TEXT("class")) == TEXT("Cleric");
+    if (bHealing) {
+        return StringField(Candidate, TEXT("team")) == TEXT("party") &&
+               NumberField(Candidate, TEXT("hp")) < NumberField(Candidate, TEXT("max_hp")) &&
+               NumberField(Acting, TEXT("spell_uses")) > 0;
+    }
+    return StringField(Candidate, TEXT("team")) == TEXT("enemy");
+}
+
+bool AOdrGameMode::SelectTargetForAction(bool bCast, bool bArea, bool bCycle) {
     const auto State = Snapshot();
     const auto Battle = ObjectField(State, TEXT("battle"));
     const TArray<TSharedPtr<FJsonValue>>* Actors = nullptr;
-    const TArray<TSharedPtr<FJsonValue>>* Order = nullptr;
     if (!Battle.IsValid() || !Battle->TryGetArrayField(TEXT("actors"), Actors) ||
-        !Battle->TryGetArrayField(TEXT("order"), Order)) {
-        return;
+        Actors == nullptr) {
+        return false;
     }
-    const FString ActingId = ArrayString(*Order, NumberField(Battle, TEXT("turn_index")));
+    const FString ActingId = CurrentActorId(State);
     TSharedPtr<FJsonObject> Acting;
     for (const auto& Actor : *Actors) {
         if (StringField(Actor->AsObject(), TEXT("id")) == ActingId) {
@@ -322,50 +354,111 @@ void AOdrGameMode::ActOnNearest(bool bCast, bool bArea) {
         }
     }
     if (!Acting.IsValid()) {
-        return;
+        return false;
     }
-    const FIntPoint From = PositionField(Acting, TEXT("pos"));
-    int32 Best = MAX_int32;
-    FString Target;
-    FIntPoint TargetPosition;
-    const bool bHealing = bCast && !bArea && StringField(Acting, TEXT("class")) == TEXT("Cleric");
+    TArray<FString> Candidates;
     for (const auto& Actor : *Actors) {
         const auto Candidate = Actor->AsObject();
-        if (StringField(Candidate, TEXT("team")) != (bHealing ? TEXT("party") : TEXT("enemy")) ||
-            NumberField(Candidate, TEXT("hp")) <= 0) {
-            continue;
-        }
-        const FIntPoint To = PositionField(Candidate, TEXT("pos"));
-        const int32 DQ = From.X - To.X;
-        const int32 DR = From.Y - To.Y;
-        const int32 Distance = (FMath::Abs(DQ) + FMath::Abs(DR) + FMath::Abs(DQ + DR)) / 2;
-        if (Distance < Best) {
-            Best = Distance;
-            Target = StringField(Candidate, TEXT("id"));
-            TargetPosition = To;
+        if (IsUsableTarget(Acting, Candidate, bCast, bArea)) {
+            Candidates.Add(StringField(Candidate, TEXT("id")));
         }
     }
-    if (!Target.IsEmpty()) {
-        if (bArea) {
-            Command(CommandWithPosition(TEXT("cast_area"), TargetPosition.X, TargetPosition.Y));
-        } else {
-            Command(FString::Printf(TEXT("{\"action\":\"%s\",\"target\":\"%s\"}"),
-                                    bCast ? TEXT("cast") : TEXT("attack"), *Target));
+    if (Candidates.IsEmpty()) {
+        SelectedTarget.Empty();
+        LastMessage = bCast && StringField(Acting, TEXT("class")) == TEXT("Cleric")
+                          ? TEXT("No wounded ally can receive that spell.")
+                          : TEXT("No usable target is available.");
+        Refresh();
+        return false;
+    }
+    int32 Index = Candidates.IndexOfByKey(SelectedTarget);
+    if (Index == INDEX_NONE || bCycle) {
+        Index = Index == INDEX_NONE ? 0 : (Index + 1) % Candidates.Num();
+        SelectedTarget = Candidates[Index];
+    }
+    return true;
+}
+
+void AOdrGameMode::CycleTarget() {
+    const auto State = Snapshot();
+    const auto Battle = ObjectField(State, TEXT("battle"));
+    const FString ActingId = CurrentActorId(State);
+    TSharedPtr<FJsonObject> Acting;
+    const TArray<TSharedPtr<FJsonValue>>* Actors = nullptr;
+    if (Battle.IsValid() && Battle->TryGetArrayField(TEXT("actors"), Actors) && Actors != nullptr) {
+        for (const auto& Actor : *Actors) {
+            if (StringField(Actor->AsObject(), TEXT("id")) == ActingId) {
+                Acting = Actor->AsObject();
+                break;
+            }
         }
     }
+    if (Acting.IsValid()) {
+        SelectTargetForAction(false, false, true);
+        Refresh();
+    }
+}
+
+void AOdrGameMode::CycleEnemyTarget() {
+    CycleTarget();
+}
+
+void AOdrGameMode::CycleHealingTarget() {
+    const auto State = Snapshot();
+    const auto Battle = ObjectField(State, TEXT("battle"));
+    if (!Battle.IsValid()) {
+        return;
+    }
+    SelectTargetForAction(true, false, true);
+    Refresh();
+}
+
+void AOdrGameMode::ActOnSelected(bool bCast, bool bArea) {
+    if (!SelectTargetForAction(bCast, bArea, false)) {
+        return;
+    }
+    if (bArea) {
+        const auto State = Snapshot();
+        const auto Battle = ObjectField(State, TEXT("battle"));
+        const TArray<TSharedPtr<FJsonValue>>* Actors = nullptr;
+        if (Battle.IsValid() && Battle->TryGetArrayField(TEXT("actors"), Actors) &&
+            Actors != nullptr) {
+            for (const auto& ActorValue : *Actors) {
+                if (StringField(ActorValue->AsObject(), TEXT("id")) == SelectedTarget) {
+                    const FIntPoint Point = PositionField(ActorValue->AsObject(), TEXT("pos"));
+                    Command(CommandWithPosition(TEXT("cast_area"), Point.X, Point.Y));
+                    return;
+                }
+            }
+        }
+        return;
+    }
+    Command(FString::Printf(TEXT("{\"action\":\"%s\",\"target\":\"%s\"}"),
+                            bCast ? TEXT("cast") : TEXT("attack"), *SelectedTarget));
+}
+
+void AOdrGameMode::ActOnNearest(bool bCast, bool bArea) {
+    // Keep the old adapter entry point for scripts, but route it through the
+    // explicit selection seam so keyboard and automation paths agree.
+    SelectTargetForAction(bCast, bArea, false);
+    ActOnSelected(bCast, bArea);
 }
 
 void AOdrGameMode::SaveSession() {
     if (Session == nullptr) {
         return;
     }
-    const FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("session.json"));
+    const FString Path = AutomationSavePath.IsEmpty()
+                             ? FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("session.json"))
+                             : AutomationSavePath;
     const FString Pending = Path + TEXT(".pending");
     const FString Contents = UTF8_TO_TCHAR(odr_save(Session));
-    if (!FFileHelper::SaveStringToFile(Contents, *Pending,
+    if (!IFileManager::Get().MakeDirectory(*FPaths::GetPath(Path), true) ||
+        !FFileHelper::SaveStringToFile(Contents, *Pending,
                                        FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM) ||
         !IFileManager::Get().Move(*Path, *Pending, true)) {
-        LastMessage = TEXT("Save failed.");
+        LastMessage = FString::Printf(TEXT("Save failed: %s"), *Path);
+        UE_LOG(LogTemp, Warning, TEXT("%s"), *LastMessage);
         return;
     }
     LastMessage = FString::Printf(TEXT("Saved to %s"), *Path);
@@ -376,13 +469,16 @@ void AOdrGameMode::LoadSession() {
         return;
     }
     FString Contents;
-    const FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("session.json"));
+    const FString Path = AutomationSavePath.IsEmpty()
+                             ? FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("session.json"))
+                             : AutomationSavePath;
     if (!FFileHelper::LoadFileToString(Contents, *Path) ||
         !odr_load(Session, TCHAR_TO_UTF8(*Contents))) {
         LastMessage = FString::Printf(TEXT("Load failed: %s"), UTF8_TO_TCHAR(odr_error(Session)));
         return;
     }
     LastMessage = TEXT("Session loaded.");
+    SelectedTarget.Empty();
     PresentationText.Empty();
     PresentationUntil = 0.0f;
     Refresh();
@@ -423,7 +519,8 @@ void AOdrGameMode::SpawnMarker(const FString& VisualId, const FString& Label, in
         if (MeshPath.IsEmpty() || StringField(Binding, TEXT("mesh_type")) == TEXT("skeletal")) {
             MeshPath = StringField(Binding, TEXT("fallback_mesh"));
         }
-        UStaticMesh* MeshAsset = LoadObject<UStaticMesh>(nullptr, *MeshPath);
+        UStaticMesh* MeshAsset =
+            MeshPath.IsEmpty() ? nullptr : LoadObject<UStaticMesh>(nullptr, *MeshPath);
         if (MeshAsset == nullptr) {
             MeshAsset = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
         }
@@ -433,7 +530,13 @@ void AOdrGameMode::SpawnMarker(const FString& VisualId, const FString& Label, in
     }
     Marker->AddInstanceComponent(Mesh);
     Mesh->SetupAttachment(Root);
-    Mesh->SetWorldScale3D(Label.IsEmpty() ? FVector(0.8, 0.8, 0.10) : FVector(1.2, 1.2, 1.3));
+    FVector Scale = Label.IsEmpty() ? FVector(0.8, 0.8, 0.10) : FVector(1.2, 1.2, 1.3);
+    if (VisualId == TEXT("placeholder.wall")) {
+        Scale = FVector(1.25, 1.25, 0.45);
+    } else if (VisualId == TEXT("placeholder.rough")) {
+        Scale = FVector(0.95, 0.95, 0.16);
+    }
+    Mesh->SetWorldScale3D(Scale);
     const FString MaterialPath = StringField(Binding, TEXT("material"));
     if (!MaterialPath.IsEmpty()) {
         if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, *MaterialPath)) {
@@ -442,11 +545,10 @@ void AOdrGameMode::SpawnMarker(const FString& VisualId, const FString& Label, in
     }
     Mesh->RegisterComponent();
     if (!Label.IsEmpty()) {
-        const FLinearColor Color = VisualId.Contains(TEXT("enemy")) ||
-                                           VisualId.Contains(TEXT("boss"))
-                                       ? FLinearColor::Red
-                                   : VisualId.Contains(TEXT("hero")) ? FLinearColor(0.0f, 1.0f, 1.0f)
-                                                                      : FLinearColor::Yellow;
+        const FLinearColor Color =
+            VisualId.Contains(TEXT("enemy")) || VisualId.Contains(TEXT("boss")) ? FLinearColor::Red
+            : VisualId.Contains(TEXT("hero")) ? FLinearColor(0.0f, 1.0f, 1.0f)
+                                              : FLinearColor::Yellow;
         SceneLabels.Add({Location + FVector(0.0, 0.0, 170.0), Label, Color});
     }
 }
@@ -499,7 +601,25 @@ void AOdrGameMode::Refresh() {
                 SpawnMarker(TEXT("placeholder.floor"), TEXT(""), Point.X, Point.Y, -80.0f);
             }
         }
+        const TArray<TSharedPtr<FJsonValue>>* Walls = nullptr;
+        if (Layout.IsValid() && Layout->TryGetArrayField(TEXT("walls"), Walls) &&
+            Walls != nullptr) {
+            for (const auto& Wall : *Walls) {
+                const FIntPoint Point = Position(Wall->AsArray());
+                SpawnMarker(TEXT("placeholder.wall"), TEXT("WALL"), Point.X, Point.Y, -20.0f);
+            }
+        }
+        const TArray<TSharedPtr<FJsonValue>>* Rough = nullptr;
+        if (Layout.IsValid() && Layout->TryGetArrayField(TEXT("rough"), Rough) &&
+            Rough != nullptr) {
+            for (const auto& Tile : *Rough) {
+                const FIntPoint Point = Position(Tile->AsArray());
+                SpawnMarker(TEXT("placeholder.rough"), TEXT("ROUGH"), Point.X, Point.Y, -40.0f);
+            }
+        }
         const auto Objects = ObjectField(Layout, TEXT("objects"));
+        const auto Changes = ObjectField(Run, TEXT("changes"));
+        const FIntPoint MinePosition = PositionField(State, TEXT("mine_pos"));
         const bool bLower = NumberField(State, TEXT("mine_floor")) == 2;
         const bool bBoss = Run.IsValid() && Run->GetBoolField(TEXT("boss"));
         for (const TCHAR* Name :
@@ -514,22 +634,79 @@ void AOdrGameMode::Refresh() {
                 (!bBoss && ObjectName.StartsWith(TEXT("stairs")))) {
                 continue;
             }
+            const bool bHiddenLootTaken =
+                Changes.IsValid() && Changes->GetBoolField(TEXT("hidden_loot_taken"));
+            const bool bOreTaken = Changes.IsValid() && Changes->GetBoolField(TEXT("ore_taken"));
+            const bool bMainWon = Changes.IsValid() && Changes->GetBoolField(TEXT("main_won"));
+            const bool bSecretFound =
+                Changes.IsValid() && Changes->GetBoolField(TEXT("secret_found"));
+            const bool bSecretWon = Changes.IsValid() && Changes->GetBoolField(TEXT("secret_won"));
+            const bool bHiddenLootNearby =
+                HexDistance(MinePosition, PositionField(Objects, Name)) <= 1;
+            const bool bConsumed =
+                (ObjectName == TEXT("hidden_loot") && bHiddenLootTaken) ||
+                (ObjectName == TEXT("ore") && bOreTaken) ||
+                (ObjectName == TEXT("main_trigger") && bMainWon) ||
+                (ObjectName == TEXT("secret_trigger") && (!bSecretFound || bSecretWon)) ||
+                (ObjectName == TEXT("clue") && bSecretFound) ||
+                (ObjectName == TEXT("hidden_loot") && !bHiddenLootNearby && !bSecretFound);
+            if (bConsumed) {
+                continue;
+            }
+            if (CurrentPhase == TEXT("battle")) {
+                continue;
+            }
             const FIntPoint Point = PositionField(Objects, Name);
-            SpawnMarker(TEXT("placeholder.objective"), Name, Point.X, Point.Y, 0.0f);
+            FString Label;
+            if (ObjectName == TEXT("entry")) {
+                Label = TEXT("ENTRY");
+            } else if (ObjectName == TEXT("clue")) {
+                Label = TEXT("Clue");
+            } else if (ObjectName == TEXT("hidden_loot")) {
+                Label = TEXT("Cache");
+            } else if (ObjectName == TEXT("main_trigger")) {
+                Label = TEXT("Main battle");
+            } else if (ObjectName == TEXT("secret_trigger")) {
+                Label = TEXT("Secret battle");
+            } else if (ObjectName == TEXT("stairs_down") || ObjectName == TEXT("stairs_up")) {
+                Label = TEXT("Stairs");
+            } else {
+                Label = TEXT("Ore");
+            }
+            SpawnMarker(TEXT("placeholder.objective"), Label, Point.X, Point.Y, 0.0f);
         }
         if (CurrentPhase == TEXT("dungeon")) {
             const FIntPoint Party = PositionField(State, TEXT("mine_pos"));
             SpawnMarker(TEXT("placeholder.hero"), TEXT("Party"), Party.X, Party.Y, 100.0f);
         } else {
             const auto Battle = ObjectField(State, TEXT("battle"));
+            const FIntPoint Approach = PositionField(Battle, TEXT("approach"));
+            SpawnMarker(TEXT("placeholder.objective"), TEXT("RETREAT"), Approach.X, Approach.Y,
+                        30.0f);
             const TArray<TSharedPtr<FJsonValue>>* Actors = nullptr;
             if (Battle.IsValid() && Battle->TryGetArrayField(TEXT("actors"), Actors)) {
+                int32 EnemyIndex = 0;
                 for (const auto& ActorValue : *Actors) {
                     const auto Actor = ActorValue->AsObject();
+                    const bool bEnemy = StringField(Actor, TEXT("team")) == TEXT("enemy");
+                    if (bEnemy) {
+                        ++EnemyIndex;
+                    }
                     if (NumberField(Actor, TEXT("hp")) > 0) {
                         const FIntPoint Point = PositionField(Actor, TEXT("pos"));
-                        SpawnMarker(StringField(Actor, TEXT("visual_id")),
-                                    StringField(Actor, TEXT("name")), Point.X, Point.Y, 100.0f);
+                        const bool bCurrent =
+                            StringField(Actor, TEXT("id")) == CurrentActorId(State);
+                        FString Label = bEnemy
+                                            ? FString::Printf(TEXT("E%d"), EnemyIndex)
+                                            : StringField(Actor, TEXT("name")).Left(7);
+                        if (bCurrent) {
+                            Label += TEXT("*");
+                        }
+                        if (StringField(Actor, TEXT("id")) == SelectedTarget) {
+                            Label += TEXT(">");
+                        }
+                        SpawnMarker(StringField(Actor, TEXT("visual_id")), Label, Point.X, Point.Y,
+                                    bCurrent ? 180.0f : 100.0f);
                     }
                 }
             }
@@ -547,8 +724,8 @@ FString AOdrGameMode::Help() const {
                     "L level | R rest | X leave");
     }
     if (CurrentPhase == TEXT("battle")) {
-        return TEXT(
-            "Q W E A S D move | F attack | C cast | Z mage area | Space defend | R retreat");
+        return TEXT("Q W E A S D move | T enemy target | Y wounded ally | F attack | C cast | Z "
+                    "mage area | Space defend | R retreat | * turn | > target");
     }
     if (CurrentPhase == TEXT("dungeon")) {
         return TEXT("Q W E A S D move | 1 search | 2 loot | 3 main | 4 secret | 5 ore | 6 stairs | "
@@ -578,6 +755,45 @@ FString AOdrGameMode::Status() const {
     if (Phase() == TEXT("dungeon") || Phase() == TEXT("battle")) {
         Result += FString::Printf(TEXT(" | mine floor %d"), NumberField(State, TEXT("mine_floor")));
     }
+    if (Phase() == TEXT("battle")) {
+        const auto Battle = ObjectField(State, TEXT("battle"));
+        const FString ActingId = CurrentActorId(State);
+        const TArray<TSharedPtr<FJsonValue>>* Actors = nullptr;
+        if (Battle.IsValid() && Battle->TryGetArrayField(TEXT("actors"), Actors) &&
+            Actors != nullptr) {
+            for (const auto& ActorValue : *Actors) {
+                const auto Actor = ActorValue->AsObject();
+                if (StringField(Actor, TEXT("id")) == ActingId) {
+                    Result += FString::Printf(
+                        TEXT("\nTurn: %s  HP %d/%d  move %d  action %s  spells remaining %d"),
+                        *StringField(Actor, TEXT("name")), NumberField(Actor, TEXT("hp")),
+                        NumberField(Actor, TEXT("max_hp")), NumberField(Actor, TEXT("move_left")),
+                        Actor->GetBoolField(TEXT("acted")) ? TEXT("spent") : TEXT("ready"),
+                        NumberField(Actor, TEXT("spell_uses")));
+                    break;
+                }
+            }
+        }
+        if (!SelectedTarget.IsEmpty() && Actors != nullptr) {
+            int32 EnemyIndex = 0;
+            for (const auto& ActorValue : *Actors) {
+                const auto Actor = ActorValue->AsObject();
+                const bool bEnemy = StringField(Actor, TEXT("team")) == TEXT("enemy");
+                if (bEnemy) {
+                    ++EnemyIndex;
+                }
+                if (StringField(Actor, TEXT("id")) == SelectedTarget) {
+                    const FString Marker = bEnemy ? FString::Printf(TEXT("E%d: "), EnemyIndex)
+                                                   : FString();
+                    Result += FString::Printf(TEXT("\nTarget: %s%s  HP %d/%d"), *Marker,
+                                              *StringField(Actor, TEXT("name")),
+                                              NumberField(Actor, TEXT("hp")),
+                                              NumberField(Actor, TEXT("max_hp")));
+                    break;
+                }
+            }
+        }
+    }
     const TArray<TSharedPtr<FJsonValue>>* Events = nullptr;
     if (State->TryGetArrayField(TEXT("events"), Events) && Events != nullptr &&
         !Events->IsEmpty()) {
@@ -595,12 +811,34 @@ FString AOdrGameMode::Presentation() const {
                : FString();
 }
 
+FString AOdrGameMode::CanonicalState() const {
+    return Session == nullptr ? FString() : UTF8_TO_TCHAR(odr_snapshot(Session));
+}
+
+void AOdrGameMode::RebuildPresentationForAutomation(const FString& Bindings) {
+    if (!Bindings.IsEmpty()) {
+        Visuals = ParseObject(Bindings);
+    }
+    Refresh();
+}
+
+int32 AOdrGameMode::SkeletalMarkerCountForAutomation() const {
+    int32 Count = 0;
+    for (const AActor* Marker : SceneActors) {
+        if (Marker != nullptr &&
+            Marker->FindComponentByClass<USkeletalMeshComponent>() != nullptr) {
+            ++Count;
+        }
+    }
+    return Count;
+}
+
 void AOdrGameMode::OdrSmoke() {
     bool bSuccess = Session != nullptr;
     if (bSuccess) {
-        const FString BeforeRejected = UTF8_TO_TCHAR(odr_snapshot(Session));
-        bSuccess &= odr_apply(Session, "{\"action\":\"enter_mine\"}") == 0;
-        bSuccess &= FString(UTF8_TO_TCHAR(odr_snapshot(Session))) == BeforeRejected;
+        const FString BeforeRejected = CanonicalState();
+        bSuccess &= !Command(TEXT("{\"action\":\"enter_mine\"}"));
+        bSuccess &= CanonicalState() == BeforeRejected;
     }
     FString Script;
     bSuccess &= FFileHelper::LoadFileToString(Script, *DataPath(TEXT("blacksmith_mine.jsonl")));
@@ -611,7 +849,13 @@ void AOdrGameMode::OdrSmoke() {
             break;
         }
         if (!Line.IsEmpty() && !Line.StartsWith(TEXT("#"))) {
-            bSuccess = odr_apply(Session, TCHAR_TO_UTF8(*Line)) != 0;
+            bSuccess = Command(Line);
+            if (bSuccess && Line.Contains(TEXT("create_hero"))) {
+                bSuccess = SkeletalMarkerCountForAutomation() > 0;
+                if (!bSuccess) {
+                    UE_LOG(LogTemp, Error, TEXT("ODR smoke skeletal binding was not cooked or loaded"));
+                }
+            }
             if (!bSuccess) {
                 UE_LOG(LogTemp, Error, TEXT("ODR smoke command failed: %s (%s)"), *Line,
                        UTF8_TO_TCHAR(odr_error(Session)));

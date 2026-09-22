@@ -10,8 +10,8 @@ Detailed gameplay rules, technical architecture and prototype scope remain
 to be settled. Compact dynamic dungeons and composable environment assets are
 required; specific quest and dungeon dependencies remain under evaluation.
 
-The current direction combines Heroes-inspired city screens and an adventure
-map with curiosity-driven dungeon exploration and
+The current direction combines Heroes-inspired city screens and a compact,
+freely navigable overworld with curiosity-driven dungeon exploration and
 Shining Force II-inspired tactical battles. See
 [Gameplay reference mix](#gameplay-reference-mix) and
 [Dungeon exploration and battle pacing](#dungeon-exploration-and-battle-pacing).
@@ -27,8 +27,9 @@ A single-player fantasy RPG about an independent adventurer building a career
 from a familiar trading town while uncovering why ancient routes between
 forgotten places are reopening. Local commissions, recovered equipment,
 relationships and discoveries lead gradually into otherworldly expeditions.
-Prepare through direct city services, choose destinations on an adventure map,
-explore connected dungeon spaces for mystery and loot, and command the party in
+Prepare through direct city services, discover and choose destinations across
+a compact open overworld, explore connected dungeon spaces for mystery and loot,
+and command the party in
 selected turn-based tactical battles.
 
 The world combines wonder with real danger: welcoming places and memorable
@@ -50,11 +51,11 @@ experience; exact controls, rules and scope remain open.
 | Part of the game | Reference | Intended experience |
 |---|---|---|
 | City visits | Heroes of Might and Magic | An atmospheric city screen with direct access to services, party preparation and opportunities. |
-| Regional travel | Heroes of Might and Magic | An adventure map for discovering destinations and choosing routes, risks and opportunities. |
+| Regional travel | Shining Force II as an exploration reference; our own compact overworld design | Freely navigate a region, discover alternative destinations and revisit places, with room to detour from the main story. |
 | Dungeon exploration | Neverwinter Nights, Diablo I and Skyrim | Physically explore connected spaces, uncover mysteries, discover hidden loot and learn about the place through its environment. These are references for exploration and atmosphere. |
 | Battles | Shining Force II | Control individual party members in readable, turn-based tactical encounters, with movement, positioning and complementary roles. |
 
-### City services and the adventure map
+### City services and the compact overworld
 
 City visits should be quick and purposeful. Present the forge, market, recovery,
 recruitment and adventure opportunities through directly accessible services.
@@ -62,10 +63,25 @@ Recurring characters can express personality and offer short consequential
 choices within those interactions. Progress should not depend on walking around
 town or repeatedly checking multiple NPCs for new dialogue.
 
-Use the regional map to choose and discover places worth exploring. Entering a
-dungeon changes from regional travel to exploration of its actual rooms and
-passages. City construction, territorial control, map time and movement budgets
-remain undecided; the reference does not settle those systems.
+Use a compact, freely navigable regional overworld rather than a fixed sequence
+of destination nodes. Offer several places to explore at once, let the player
+change course, and allow discoveries independently of accepted quests. Roads
+guide navigation; traversable terrain can support off-road detours. Familiar
+places remain revisitable under their persistence rules. This is a selective
+exploration reference, not a commitment to reproduce Shining Force II's world
+structure or story progression.
+
+Compact describes the scale and presentation, not a linear itinerary. Represent
+party travel at regional scale; detailed exploration of actual rooms and passages
+begins inside dungeons. A continuous, full-scale 3D outdoor world is not required.
+Geography, access conditions and recognizable fixed dangers can limit where the
+party can safely go, while story leads provide direction without removing
+alternative destinations.
+
+Heroes remains the reference for direct city services, not the specification for
+overworld travel. Exact map controls, discovery visibility, travel time and
+movement budgets remain undecided. City construction and territorial control
+are also separate, undecided systems.
 
 ### Mystery, discovery and tactical encounters
 
@@ -82,8 +98,8 @@ major rooms within the connected dungeon. Discovery and atmosphere must carry
 the intervals between battles; copying these references' encounter frequency
 is not part of the decision.
 
-The loop is: prepare in the city, choose a destination on the adventure map,
-explore its dungeon, resolve selected tactical encounters, then return with
+The loop is: prepare in the city, explore the compact overworld and choose a
+destination, explore its dungeon, resolve selected tactical encounters, then return with
 discoveries and rewards that develop the party and unlock further opportunities.
 The simultaneous party limit, exploration controls, deployment transitions and
 precise combat rules remain open. Plan for evaluating parties larger than four;
@@ -185,10 +201,11 @@ must be assessed together. No playtest of this combination has been performed.
 - **Fixed world danger.** Locations, depths and world events determine threats
   independently of the hero's level. Earlier threats remain easier as the party
   improves. This is our design rule, not a claim about every encounter in NWN.
-- **Direct city services and adventure-map travel.** Use a Heroes-inspired city
-  screen for preparation and concise interactions, and an adventure map to
-  discover and reach destinations. Adventures can expand into ruins, wilderness
-  and fortresses, growing from local problems into other realms.
+- **Direct city services and a compact open overworld.** Use a Heroes-inspired
+  city screen for preparation and concise interactions. Freely navigate a
+  regional map with alternative destinations, discoveries and revisitable
+  places, rather than a fixed itinerary. Adventures can expand into ruins,
+  wilderness and fortresses, growing from local problems into other realms.
 - **Persistent places with temporary expeditions.** Ordinary locations usually
   retain their geography and history. Portals and similar means can provide
   generated expeditions. An unfinished expedition remains available across
@@ -246,8 +263,8 @@ must be assessed together. No playtest of this combination has been performed.
   actors, objectives, solutions and consequences.
 - **An elevated 3D dungeon viewpoint.** A rotatable, zoomable camera supports
   exploration, full-party tactics and visible equipment. Close inspection can
-  show finer detail. City screens and the adventure map use their own suitable
-  presentation; they do not require a walkable 3D town or continuous overworld.
+  show finer detail. City screens and the compact overworld use their own suitable
+  presentation; they do not require a walkable 3D town or full-scale 3D outdoor world.
 - **Detailed, stylized fantasy with realistic materials.** This is the selected
   visual target: expressive, readable shapes with convincing metal, leather,
   stone, skin and magical effects. Art quality must hold at the gameplay camera
@@ -385,7 +402,8 @@ The proposed loop connects the agreed systems:
    discoveries reveal an expedition, an equipment goal, a companion concern or
    a lead in the main mystery. Repeated town dialogue rounds are not required.
 2. Prepare the party, equipment and supplies using knowledge of the destination
-   and its dangers, then travel using the adventure map.
+   and its dangers, then travel across the compact overworld, with room to
+   change course or investigate another destination.
 3. Explore connected dungeon spaces, gather clues, discover hidden loot and
    choose supported approaches. Use skills, relationships and selected tactical
    battles to resolve obstacles, managing resources between safe places.
@@ -469,7 +487,8 @@ to help players understand dangers and prepare. Include secrets and distinctive
 locations that can be discovered independently of accepted quests. Sound,
 lighting and environmental details should make places worth exploring.
 
-On the regional map, discovery reveals destinations and routes. Inside a
+On the compact overworld, discovery reveals alternative destinations and routes,
+including places away from the main story lead. Inside a
 dungeon, curiosity can uncover loot, secret spaces and information about its
 inhabitants or history. Not every reward needs a battle. Optional secret battles
 offer special rewards and must remain unnecessary for ordinary progression.
@@ -519,7 +538,7 @@ recover at low health with a temporary wound cleared at a safe site. Reviving
 someone during combat requires a limited ability or item. Whole-party defeat
 returns the game state to a previous save.
 
-Allow saving in the city, on the adventure map, during dungeon exploration and
+Allow saving in the city, on the compact overworld, during dungeon exploration and
 within tactical battles. Reloading restores the saved situation, including an
 unfinished expedition and its battle progress. Preserve the current acting
 character, turn order, spent actions, positions, effects, objectives and random
@@ -1279,9 +1298,11 @@ runtime packaging and voice coverage remain design decisions.
 2. Specify tactical movement and action budgets, turn order, targeting, terrain,
    reactions, effect duration and enemy behavior. Decide exploration controls,
    deployment, encounter extent, retreat and mid-battle save behavior together.
-3. Define city-service navigation and the adventure map: discovering and entering
-   locations, route choices, travel time and persistent markers. City development,
-   territorial systems and daily movement budgets are separate undecided options.
+3. Define city-service navigation and controls for the agreed compact, freely
+   navigable overworld: traversable terrain, discovering and entering locations,
+   visibility, travel time and persistent markers. Test whether alternative
+   destinations and detours offer meaningful choices at this scale. City
+   development, territorial systems and daily movement budgets remain undecided.
 4. Test the floor rhythm with a main battle, meaningful exploration, optional
    secret content and a possible final-floor boss. Measure battle and exploration
    time, backtracking, useful discoveries and voluntary secret participation.

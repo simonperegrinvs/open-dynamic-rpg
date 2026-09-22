@@ -1,0 +1,44 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "dev",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "BUILD_TESTING": "ON" }
+    },
+    {
+      "name": "release",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "sanitizers",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/sanitizers",
+      "cacheVariables": { "ODR_SANITIZERS": "ON" }
+    },
+    {
+      "name": "ue-release",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/ue-release",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF",
+        "ODR_SHARED": "ON",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.0"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "sanitizers", "configurePreset": "sanitizers" },
+    { "name": "ue-release", "configurePreset": "ue-release" }
+  ],
+  "testPresets": [
+    { "name": "dev", "configurePreset": "dev", "output": { "outputOnFailure": true } },
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } },
+    { "name": "sanitizers", "configurePreset": "sanitizers", "output": { "outputOnFailure": true } }
+  ]
+}

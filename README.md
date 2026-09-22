@@ -1,13 +1,14 @@
 # Open Dynamic RPG
 
 Working repository for an original single-player fantasy RPG combining
-Heroes-inspired city screens and adventure-map travel, mysterious dungeon
-exploration inspired by Neverwinter Nights, Diablo I and Skyrim, and
+Heroes-inspired city screens and a compact, freely navigable overworld,
+mysterious dungeon exploration inspired by Neverwinter Nights, Diablo I and Skyrim, and
 Shining Force II-inspired turn-based tactical battles.
 
 Prepare the party through direct city services, discover destinations on the
-map, explore connected dungeon spaces for clues and loot, and fight selected
-major encounters. Usually each floor has one main battle; additional battles
+regional map with alternative places to explore and revisit, explore connected
+dungeon spaces for clues and loot, and fight selected major encounters.
+Usually each floor has one main battle; additional battles
 are optional secret content with special rewards. A possible lowest-floor boss
 occupies that floor's main battle slot.
 
@@ -19,9 +20,16 @@ facts and validated physical locations.
 
 ## Current status
 
-This project is in concept and technical research. No playable game or reusable
-toolkit has been implemented yet. Unreal Engine 5.8 is the working game-engine
-choice, with Blender and Rigify for portable character and creature authoring.
+The first blacksmith/mine slice is implemented as a portable C++20 session,
+headless scenario runner and Unreal 5.8 diorama with mouse controls. Its authored loop
+reaches a lasting equipment upgrade; generated variants use the same runtime.
+The project remains a prototype, with playtime and performance targets awaiting
+measurement. Blender and Rigify remain the portable character-art foundation.
+
+Start with [development setup and checks](docs/DEVELOPMENT.md). The quickest
+portable verification is `cmake --preset dev`, `cmake --build --preset dev`,
+then `ctest --preset dev`. Unreal requires staged content and the portable
+`ue-release` library first; the development guide includes the Mac commands.
 
 ## Documents
 
@@ -33,6 +41,14 @@ choice, with Blender and Rigify for portable character and creature authoring.
   production.
 - [AI-assisted RPG reference review](docs/RPG_REFERENCE_REVIEW.md) — pinned
   source findings from Sanctuary's End, Aetheria, Godotwind and Embermere RPG.
+- [Development flow](docs/DEVELOPMENT.md) — exact checks, content and save
+  workflow, local Unreal validation and Luna/Sol review handoff.
+- [Tool and license inventory](docs/TOOLS.md) — pinned versions and boundaries.
+- [Content guide](docs/CONTENT.md) — templates, resolved runs and validation.
+- [Placeholder playtest](docs/PLAYTEST.md) — ordinary-control acceptance and measurements.
+- [Presentation guide](docs/PRESENTATION.md) — mouse interface, replaceable art and rebuilding the original Blender kit.
+- [Architecture decisions](docs/adr/0001-authoritative-session.md) — the
+  authoritative simulation and related decisions.
 
 ## Guiding constraints
 
@@ -40,7 +56,9 @@ choice, with Blender and Rigify for portable character and creature authoring.
   simultaneously active members. Active-party and recruitable-roster limits
   remain open.
 - Turn-based tactical combat with direct control of each active character.
-- Direct city services and map-based travel; progression does not require
+- A compact open overworld with alternative destinations and discoverable places,
+  not a fixed itinerary or a full-scale 3D outdoor world.
+- Direct city services; progression does not require
   walking around towns or repeatedly checking NPC conversations.
 - Connected dungeon exploration, one main battle per floor as the usual pattern,
   optional secret bonus encounters and a possible lowest-floor boss.

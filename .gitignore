@@ -1,6 +1,8 @@
 # Unreal Engine generated files
 Binaries/
 Build/
+build/
+Unreal/Content/Data/
 DerivedDataCache/
 Intermediate/
 Saved/
@@ -12,6 +14,7 @@ Saved/
 .AppleDouble
 .idea/
 .vscode/
+*.blend[0-9]
 *.suo
 *.user
 *.userprefs

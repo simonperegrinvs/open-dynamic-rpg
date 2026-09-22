@@ -1,0 +1,58 @@
+name: Project checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  linux-portable:
+    name: linux-portable
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install LLVM 21 and Ruff 0.16.8
+        run: |
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg
+          echo 'deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-21 main' | sudo tee /etc/apt/sources.list.d/llvm-21.list
+          sudo apt-get update
+          sudo apt-get install -y clang-format-21 clang-tidy-21
+          python3 -m venv .venv-check
+          .venv-check/bin/pip install ruff==0.16.8
+      - name: Inspect formatting, links and content
+        run: |
+          .venv-check/bin/ruff check tools
+          .venv-check/bin/ruff format --check tools
+          python3 tools/check_links.py
+          python3 tools/stage_content.py
+          python3 tools/stage_content.py --check
+      - name: Inspect changed whitespace
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git diff --check "origin/$BASE_REF...HEAD"
+          else
+            git diff --check HEAD^ HEAD
+          fi
+      - name: Build, lint and run portable scenarios
+        run: |
+          cmake --preset dev
+          cmake --build --preset dev -j 4
+          build/dev/odr_tool --definition game/content/mine.json --validate > /dev/null
+          build/dev/odr_tool --definition game/content/quarry.json --validate > /dev/null
+          python3 tools/check_cpp.py
+          ctest --preset dev
+          build/dev/odr_tool --script game/scenarios/blacksmith_mine.jsonl > build/headless-result.json
+          python3 -c 'import json; actual=json.load(open("build/headless-result.json")); expected=json.load(open("game/scenarios/blacksmith_mine.expected.json")); assert actual == expected'
+      - name: Sanitizer scenarios
+        run: |
+          cmake --preset sanitizers
+          cmake --build --preset sanitizers -j 4
+          ASAN_OPTIONS=detect_leaks=1 ctest --preset sanitizers

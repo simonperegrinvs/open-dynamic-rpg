@@ -3,7 +3,8 @@
 Research and working engine decision recorded: 2026-09-13.
 
 Gameplay alignment updated: 2026-09-14. Current requirements below follow the
-city-screen, adventure-map, connected-dungeon and turn-based battle direction in
+city-screen, compact open-overworld, connected-dungeon and turn-based battle
+direction in
 [the game concept](GAME_CONCEPT.md#gameplay-reference-mix). Source inspections,
 dependency findings and their dates remain historical research evidence;
 this alignment is not a new integration test or dependency selection.
@@ -59,7 +60,7 @@ two systems proposed for simultaneous use.
 For the revised game, their value is stateful objectives, concise contextual
 choices and consequences shared across city services, map travel and dungeons.
 A dialogue editor's breadth alone is not evidence of fit. Neither quest runtime
-supplies the tactical combat rules or the adventure-map experience.
+supplies the tactical combat rules or the compact open-overworld experience.
 
 For dungeons, **BenPyton/ProceduralDungeon** is a credible open-source candidate
 for the narrower task of assembling authored 3D rooms. It is substantially more
@@ -373,9 +374,14 @@ joint quest/location constraints and complete expedition-save requirements.
 Use the previously proposed blacksmith/mine adventure as a bounded comparison:
 
 - Follow one complete loop: access the blacksmith directly through the city
-  screen, prepare, select the mine on the adventure map, explore connected
+  screen, prepare, travel to the mine across the compact overworld, explore connected
   spaces, resolve its main encounter and return for a persistent equipment
   upgrade. Use concise choices and discoveries without town dialogue rounds.
+- Include an alternative discoverable destination on the regional map so the
+  mine is a lead, not the only selectable next step. Check that the party can
+  detour through traversable terrain, discover a place without accepting its
+  quest, and return to the same mine instance. Keep this map test compact;
+  it does not require a second complete dungeon or full-scale outdoor exploration.
 - Begin with an authored case if useful, then generated variants using the same
   validated data and runtime. Record the actual party size for every trial and
   compare larger-than-four candidates before selecting a cap.

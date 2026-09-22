@@ -1,0 +1,7 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "Games",
+  "Description": "Placeholder-first blacksmith and mine adventure",
+  "Modules": [{ "Name": "OpenDynamicRPG", "Type": "Runtime", "LoadingPhase": "Default" }]
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "template_id": "blacksmith_blue_stone",
+  "title": "The Blue Stone Quarry",
+  "recruits": [
+    {"id": "rowan", "name": "Rowan", "class": "Warrior"},
+    {"id": "sable", "name": "Sable", "class": "Rogue"},
+    {"id": "tala", "name": "Tala", "class": "Ranger"},
+    {"id": "iona", "name": "Iona", "class": "Mage"},
+    {"id": "bran", "name": "Bran", "class": "Cleric"},
+    {"id": "kora", "name": "Kora", "class": "Barbarian"},
+    {"id": "eden", "name": "Eden", "class": "Warrior"}
+  ],
+  "mine": {
+    "entry": [0, 0], "clue": [4, 3], "hidden_loot": [5, 5],
+    "main_trigger": [7, 0], "ore": [14, 1], "secret_trigger": [6, 5], "exit": [0, 0],
+    "terrain": {
+      "q_min": 0, "q_max": 17, "r_min": -6, "r_max": 6,
+      "walls": [[8, 0], [9, 1], [11, -2]], "rough": [[4, -2], [8, 3], [13, 3]],
+      "generated_wall_options": [[4, -3], [6, 2], [11, 4], [13, -4], [15, 3]],
+      "generated_rough_options": [[4, -3], [6, 2], [11, 4], [13, -4], [15, 3]]
+    }
+  },
+  "defaults": {"participant": "quarry prospectors", "location": "blue stone quarry", "reward": "blue stone", "cache_gold": 25, "ore_quantity": 2, "main_xp": 120, "secret_xp": 60, "secret_gold": 30},
+  "encounters": {
+    "main": [
+      {"suffix": "sentinel", "name": "Stone Sentinel", "class": "Claimant", "visual_id": "placeholder.enemy", "pos": [13, -1], "hp": 20, "max_hp": 20, "armor": 2, "evasion": 6, "accuracy": 4, "damage": 7, "range": 1, "speed": 5, "move_left": 3},
+      {"suffix": "skirmisher", "name": "Quarry Skirmisher", "class": "Claimant", "visual_id": "placeholder.enemy", "pos": [15, 0], "hp": 12, "max_hp": 12, "armor": 1, "evasion": 9, "accuracy": 5, "damage": 6, "range": 2, "speed": 8, "move_left": 4}
+    ],
+    "secret": [
+      {"suffix": "echo", "name": "Stone Echo", "class": "Cave Stalker", "visual_id": "placeholder.enemy", "pos": [13, -1], "hp": 24, "max_hp": 24, "armor": 2, "evasion": 8, "accuracy": 4, "damage": 8, "range": 2, "speed": 7, "move_left": 4},
+      {"suffix": "mote", "name": "Blue Mote", "class": "Cave Stalker", "visual_id": "placeholder.enemy", "pos": [13, 4], "hp": 10, "max_hp": 10, "armor": 0, "evasion": 10, "accuracy": 4, "damage": 4, "range": 3, "speed": 9, "move_left": 4}
+    ]
+  }
+}

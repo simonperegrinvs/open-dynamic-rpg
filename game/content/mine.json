@@ -1,0 +1,58 @@
+{
+  "schema_version": 2,
+  "template_id": "blacksmith_star_iron",
+  "title": "The Blacksmith's Mine",
+  "recruits": [
+    { "id": "rowan", "name": "Rowan", "class": "Warrior" },
+    { "id": "sable", "name": "Sable", "class": "Rogue" },
+    { "id": "tala", "name": "Tala", "class": "Ranger" },
+    { "id": "iona", "name": "Iona", "class": "Mage" },
+    { "id": "bran", "name": "Bran", "class": "Cleric" },
+    { "id": "kora", "name": "Kora", "class": "Barbarian" },
+    { "id": "eden", "name": "Eden", "class": "Warrior" },
+    { "id": "fenn", "name": "Fenn", "class": "Ranger" },
+    { "id": "mira", "name": "Mira", "class": "Cleric" },
+    { "id": "orin", "name": "Orin", "class": "Mage" },
+    { "id": "pax", "name": "Pax", "class": "Rogue" }
+  ],
+  "mine": {
+    "entry": [0, 0],
+    "clue": [4, 3],
+    "hidden_loot": [5, 4],
+    "main_trigger": [7, 0],
+    "ore": [14, 0],
+    "secret_trigger": [6, 5],
+    "exit": [0, 0],
+    "terrain": {
+      "q_min": 0,
+      "q_max": 17,
+      "r_min": -6,
+      "r_max": 6,
+      "walls": [[8, 0], [10, 0], [11, -2]],
+      "rough": [[5, -2], [6, -2], [12, 3]],
+      "generated_wall_options": [[4, -3], [6, 2], [11, 4], [13, -4], [15, 3]],
+      "generated_rough_options": [[4, -3], [6, 2], [11, 4], [13, -4], [15, 3]]
+    }
+  },
+  "defaults": {
+    "participant": "mine claimants",
+    "location": "old mine",
+    "reward": "star iron",
+    "cache_gold": 15,
+    "ore_quantity": 1,
+    "main_xp": 120,
+    "secret_xp": 60,
+    "secret_gold": 20
+  },
+  "encounters": {
+    "main": [
+      {"suffix": "guard-1", "name": "Mine Guard", "class": "Claimant", "visual_id": "placeholder.enemy", "pos": [13, -2], "hp": 14, "max_hp": 14, "armor": 1, "evasion": 7, "accuracy": 3, "damage": 5, "range": 1, "speed": 6, "move_left": 4},
+      {"suffix": "guard-2", "name": "Mine Guard", "class": "Claimant", "visual_id": "placeholder.enemy", "pos": [14, 2], "hp": 14, "max_hp": 14, "armor": 1, "evasion": 7, "accuracy": 3, "damage": 5, "range": 1, "speed": 6, "move_left": 4},
+      {"suffix": "guard-3", "name": "Mine Archer", "class": "Cave Stalker", "visual_id": "placeholder.enemy", "pos": [15, 0], "hp": 17, "max_hp": 17, "armor": 1, "evasion": 7, "accuracy": 3, "damage": 5, "range": 3, "speed": 6, "move_left": 4},
+      {"suffix": "warden", "name": "Mine Warden", "class": "Mine Warden", "visual_id": "placeholder.boss", "pos": [16, 1], "hp": 32, "max_hp": 32, "armor": 3, "evasion": 7, "accuracy": 3, "damage": 9, "range": 1, "speed": 8, "move_left": 3, "boss": true}
+    ],
+    "secret": [
+      {"suffix": "stalker", "name": "Cave Stalker", "class": "Cave Stalker", "visual_id": "placeholder.enemy", "pos": [12, 4], "hp": 17, "max_hp": 17, "armor": 1, "evasion": 7, "accuracy": 3, "damage": 5, "range": 3, "speed": 6, "move_left": 4}
+    ]
+  }
+}

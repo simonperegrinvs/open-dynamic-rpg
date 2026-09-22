@@ -1,0 +1,178 @@
+{
+  "asset": "BindingProbe",
+  "purpose": "original two-bone skeletal binding integration probe",
+  "blender_version": "5.2.1 LTS",
+  "source_of_truth": "tools/art_probe/build_binding_probe.py",
+  "blend": "ArtSource/BindingProbe/BindingProbe.blend",
+  "fbx": "ArtSource/BindingProbe/BindingProbe.fbx",
+  "mesh": {
+    "name": "BindingProbe_Mesh",
+    "vertices": 16,
+    "polygons": 12
+  },
+  "bones": [
+    "root",
+    "tip"
+  ],
+  "vertex_groups": [
+    "root",
+    "tip"
+  ],
+  "weights": [
+    {
+      "index": 0,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "groups": [
+        {
+          "name": "root",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "groups": [
+        {
+          "name": "tip",
+          "weight": 1.0
+        }
+      ]
+    }
+  ],
+  "animation": {
+    "action": "BindingProbe_TipSwing",
+    "frame_start": 1,
+    "frame_end": 40,
+    "fcurves": 3
+  },
+  "limits": [
+    "This proves source mesh, weights, skeleton and FBX export only.",
+    "Unreal import, cooking, retargeting and runtime animation need separate checks.",
+    "The marker is original integration-test geometry, not a production character asset."
+  ]
+}
